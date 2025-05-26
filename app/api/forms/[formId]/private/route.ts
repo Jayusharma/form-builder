@@ -1,0 +1,124 @@
+/**
+ * Form Privacy Management API Route
+ * 
+ * This module provides an API endpoint for managing form privacy settings.
+ * Features:
+ * - Make published forms private
+ * - Role-based access control (form owner or SADMIN)
+ * - Form existence and state validation
+ * - Returns updated form with related data
+ */
+
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
+
+/**
+ * Route Parameters Type
+ * Defines the expected parameters for the route handler
+ */
+type RouteParams = {
+  params: Promise<{ formId: string }>;
+};
+
+/**
+ * POST /api/forms/[formId]/private
+ * Makes a published form private
+ * 
+ * @param {Request} req - The incoming request
+ * @param {RouteParams} params - Route parameters containing formId
+ * @returns {Promise<NextResponse>} Updated form data or error response
+ * @throws {401} If user is not authenticated
+ * @throws {403} If user lacks permission to modify form
+ * @throws {404} If form is not found
+ * @throws {400} If form is already private
+ * @throws {500} If server error occurs
+ */
+export async function POST(
+  req: Request,
+  { params }: RouteParams
+) {
+  try {
+    // Verify user authentication
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const resolvedParams = await params;
+    const { formId } = resolvedParams;
+
+    // Fetch form to verify ownership and current state
+    const form = await prisma.form.findUnique({
+      where: { id: formId },
+      select: {
+        id: true,
+        userId: true,
+        isPublished: true
+      }
+    });
+
+    // Handle form not found
+    if (!form) {
+      return NextResponse.json(
+        { error: "Form not found" },
+        { status: 404 }
+      );
+    }
+
+    // Prevent redundant privacy changes
+    if (!form.isPublished) {
+      return NextResponse.json(
+        { error: "Form is already private" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user has permission to modify form
+    // Either form owner or super admin can make form private
+    const isOwner = form.userId === session.user.id;
+    const isSAdmin = session.user.role === "SADMIN";
+
+    if (!isOwner && !isSAdmin) {
+      return NextResponse.json(
+        { error: "You don't have permission to make this form private" },
+        { status: 403 }
+      );
+    }
+
+    // Update form privacy status and return updated data
+    const updatedForm = await prisma.form.update({
+      where: { id: formId },
+      data: { isPublished: false },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        fields: {
+          orderBy: {
+            order: 'asc'
+          }
+        },
+        _count: {
+          select: {
+            submissions: true
+          }
+        }
+      }
+    });
+
+    return NextResponse.json(updatedForm);
+  } catch (error) {
+    console.error("[FORM_MAKE_PRIVATE]", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+} 

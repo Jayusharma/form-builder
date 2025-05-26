@@ -1,0 +1,352 @@
+/**
+ * Database Schema Definition
+ * 
+ * This schema defines the database structure for the form management system.
+ * It uses PostgreSQL as the database provider and includes models for:
+ * - User management and authentication
+ * - Form creation and management
+ * - Form submissions and responses
+ * - Form publication requests
+ * 
+ * The schema includes role-based access control and supports various
+ * authentication methods including email/password and OAuth.
+ */
+
+// Database connection configuration
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  //directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// Prisma Client generator configuration
+generator client {
+  provider = "prisma-client-js"
+}
+
+/**
+ * User Role Enumeration
+ * Defines the available user roles in the system
+ * - USER: Regular user with basic form submission access
+ * - ADMIN: Administrator with form management capabilities
+ * - MANAGER: Team manager with oversight capabilities
+ * - SADMIN: Super administrator with system-wide access
+ */
+enum UserRole {
+  ADMIN
+  USER
+  MANAGER
+  SADMIN
+}
+
+/**
+ * User Model
+ * Represents a user in the system with authentication and role information
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} [name] - User's display name
+ * @property {string} [email] - User's email address (unique)
+ * @property {DateTime} [emailVerified] - Email verification timestamp
+ * @property {string} [image] - User's profile image URL
+ * @property {string} [password] - Hashed password
+ * @property {UserRole} role - User's role in the system
+ * @property {boolean} isTwoFactorEnabled - Two-factor authentication status
+ * @property {DateTime} createdAt - Account creation timestamp
+ * @property {DateTime} updatedAt - Last update timestamp
+ */
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  forms         Form[]
+  submissions   FormSubmission[]
+
+  // Admin code relationship
+  adminCodeId   String?
+  adminCode     AdminCode? @relation("UserAdminCode", fields: [adminCodeId], references: [id])
+  adminCodes    AdminCode[] @relation("AdminCode")
+
+  isTwoFactorEnabled    Boolean                @default(true)
+  twoFactorConfirmation TwofactorConfirmation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Session Model
+ * Manages user authentication sessions
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} sessionToken - Unique session token
+ * @property {string} userId - Associated user ID
+ * @property {DateTime} expires - Session expiration timestamp
+ */
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/**
+ * Account Model
+ * Stores OAuth account information for social login
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} userId - Associated user ID
+ * @property {string} type - Account type (e.g., "oauth")
+ * @property {string} provider - OAuth provider (e.g., "google")
+ * @property {string} providerAccountId - Provider's unique account ID
+ * @property {string} [refresh_token] - OAuth refresh token
+ * @property {string} [access_token] - OAuth access token
+ * @property {int} [expires_at] - Token expiration timestamp
+ */
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+/**
+ * Verification Token Model
+ * Manages email verification tokens
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} email - User's email address
+ * @property {string} token - Verification token
+ * @property {DateTime} expires - Token expiration timestamp
+ */
+model VerificationToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+  @@unique([email, token])
+}
+
+/**
+ * Password Reset Token Model
+ * Manages password reset tokens
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} email - User's email address
+ * @property {string} token - Reset token
+ * @property {DateTime} expires - Token expiration timestamp
+ */
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+/**
+ * Two-Factor Token Model
+ * Manages two-factor authentication tokens
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} email - User's email address
+ * @property {string} token - 2FA token
+ * @property {DateTime} expires - Token expiration timestamp
+ */
+model TwoFactorToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+/**
+ * Two-Factor Confirmation Model
+ * Tracks two-factor authentication confirmation status
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} userId - Associated user ID
+ */
+model TwofactorConfirmation {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+}
+
+/**
+ * Form Field Type Enumeration
+ * Defines the available types of form fields
+ * 
+ * @enum {string}
+ * - TEXT: Single-line text input
+ * - PARAGRAPH: Multi-line text input
+ * - MULTIPLE_CHOICE: Radio button selection
+ * - CHECKBOX: Multiple selection
+ * - DROPDOWN: Select dropdown
+ * - SUBMIT: Submit button
+ * - IMAGE_UPLOAD: Image upload field
+ * - RICH_TEXT: Rich text editor
+ */
+enum FormFieldType {
+  TEXT
+  PARAGRAPH
+  MULTIPLE_CHOICE
+  CHECKBOX
+  DROPDOWN
+  SUBMIT
+  IMAGE_UPLOAD
+  RICH_TEXT
+}
+
+/**
+ * Form Field Model
+ * Represents a field within a form
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} formId - Associated form ID
+ * @property {FormFieldType} type - Field type
+ * @property {string} question - Field question text
+ * @property {boolean} required - Whether field is required
+ * @property {string[]} options - Available options for selection fields
+ * @property {string} [description] - Field description or rich text content
+ * @property {Json} gridPosition - Field position in grid (x, y, width, height)
+ * @property {int} order - Field display order
+ */
+model FormField {
+  id           String        @id @default(cuid())
+  formId       String
+  form         Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+  type         FormFieldType
+  question     String
+  required     Boolean       @default(false)
+  options      String[] // Array of options for multiple choice, checkbox, and dropdown
+  description  String?       @db.Text // Added field to store rich text content and other descriptions
+  gridPosition Json // Stores x, y, width, height
+  order        Int // For maintaining field order
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([formId])
+}
+
+/**
+ * Form Model
+ * Represents a complete form with fields and styling
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} title - Form title
+ * @property {string} [description] - Form description
+ * @property {FormField[]} fields - Form fields
+ * @property {Json} [style] - Form styling configuration
+ * @property {string} userId - Creator's user ID
+ * @property {boolean} isPublished - Publication status
+ * @property {DateTime} createdAt - Creation timestamp
+ * @property {DateTime} updatedAt - Last update timestamp
+ */
+model Form {
+  id            String           @id @default(cuid())
+  title         String
+  description   String?
+  fields        FormField[] // Changed from Json to relation
+  style         Json? // Stores the form style object
+  header        Json? // Stores header configuration (logo, text)
+  footer        Json? // Stores footer configuration (logo, text)
+  userId        String
+  isPublished   Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  publicRequest publicRequest[]
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submissions   FormSubmission[]
+
+  @@index([userId])
+}
+
+/**
+ * Form Submission Model
+ * Represents a user's submission to a form
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} formId - Associated form ID
+ * @property {string} userId - Submitter's user ID
+ * @property {Json} responses - Form responses
+ * @property {DateTime} createdAt - Submission timestamp
+ * @property {DateTime} updatedAt - Last update timestamp
+ */
+model FormSubmission {
+  id        String   @id @default(cuid())
+  formId    String
+  form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  userId    String   // Required field for user submissions
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses Json     // Stores the user's responses
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Ensure one submission per user per form
+  @@index([userId])
+  @@index([formId])
+}
+
+/**
+ * Public Request Model
+ * Manages form publication requests
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} formId - Associated form ID
+ * @property {boolean} accepted - Request approval status
+ */
+model publicRequest {
+  id       String  @id @default(cuid())
+  formId   String
+  accepted Boolean @default(false)
+  form     Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  @@index([formId])
+}
+
+/**
+ * Admin Code Model
+ * Represents an organization's admin code for user registration
+ * 
+ * @property {string} id - Unique identifier (CUID)
+ * @property {string} code - Unique admin code
+ * @property {string} adminId - Associated admin user ID
+ * @property {DateTime} createdAt - Creation timestamp
+ * @property {DateTime} updatedAt - Last update timestamp
+ */
+model AdminCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  adminId   String
+  admin     User     @relation("AdminCode", fields: [adminId], references: [id], onDelete: Cascade)
+  users     User[]   @relation("UserAdminCode")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([adminId])
+}
