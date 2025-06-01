@@ -173,11 +173,16 @@ const ensureValidOption = (option: string, index: number) => {
 function OptionManager({
   options,
   onUpdate,
-  fieldType
+  fieldType,
+  dict,
 }: {
   options: string[],
   onUpdate: (options: string[]) => void,
-  fieldType: FormFieldType
+  fieldType: FormFieldType,
+  dict: {
+    addOption: string;
+    removeOption: string;
+  }
 }) {
   const handleAddOption = () => {
     onUpdate([...options, `Option ${options.length + 1}`]);
@@ -215,6 +220,7 @@ function OptionManager({
                 onClick={() => handleRemoveOption(index)}
                 disabled={options.length <= 1}
                 className="h-8 w-8 text-destructive hover:text-destructive/90"
+                title={dict.removeOption}
               >
                 <MinusIcon className="h-4 w-4" />
               </Button>
@@ -241,6 +247,7 @@ function OptionManager({
               onClick={() => handleRemoveOption(index)}
               disabled={options.length <= 1}
               className="h-8 w-8 text-destructive hover:text-destructive/90"
+              title={dict.removeOption}
             >
               <MinusIcon className="h-4 w-4" />
             </Button>
@@ -254,7 +261,7 @@ function OptionManager({
         className="w-full mt-2"
       >
         <PlusIcon className="h-4 w-4 mr-2" />
-        Add Option
+        {dict.addOption}
       </Button>
     </div>
   );
@@ -331,10 +338,16 @@ const styles = `
  * @param {Function} props.onUpdate - Callback when field is updated
  * @param {Function} props.onDelete - Callback when field is deleted
  */
-function GridItem({ field, onUpdate, onDelete }: {
+function GridItem({ 
+  field, 
+  onUpdate, 
+  onDelete,
+  dict,
+}: {
   field: GridFormField;
   onUpdate: (field: GridFormField) => void;
   onDelete: (id: string) => void;
+  dict: FieldDetailsModalProps['dict'];
 }) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
@@ -425,6 +438,7 @@ function GridItem({ field, onUpdate, onDelete }: {
           setIsDetailsModalOpen(false);
         }}
         initialFieldData={field}
+        dict={dict}
       />
     </Card>
   );
@@ -436,19 +450,85 @@ const ensureValidFieldType = (type: string | undefined): FormFieldType => {
   return validTypes.includes(type as FormFieldType) ? (type as FormFieldType) : 'TEXT';
 };
 
-/**
- * FieldDetailsModal Component
- * Modal for adding or editing form field details
- * 
- * @param {Object} props - Component props
- * @param {boolean} props.isOpen - Whether the modal is open
- * @param {Function} props.onClose - Callback when modal is closed
- * @param {FormFieldType} props.fieldType - Type of field being edited
- * @param {Partial<GridFormField>} props.fieldData - Current field data
- * @param {Function} props.onUpdateFieldData - Callback when field data is updated
- * @param {Function} props.onSaveFieldDetails - Callback when field details are saved
- * @param {GridFormField} props.initialFieldData - Initial field data for editing
- */
+// Define HeaderFooterConfig interface
+interface HeaderFooterConfig {
+  logo?: string;
+  text?: string;
+  enabled: boolean;
+}
+
+// Update HeaderFooterConfigDict interface
+interface HeaderFooterConfigDict {
+  uploadLogo: string;
+  changeLogo: string;
+  uploading: string;
+  maxChars: string;
+  text: string;
+  logo: string;
+  enable: string;
+  logoUploadError: {
+    invalidType: string;
+    tooLarge: string;
+    uploadFailed: string;
+  };
+  logoUploadSuccess: string;
+}
+
+// Update FieldDetailsModalProps interface
+interface FieldDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  fieldType: FormFieldType | null;
+  fieldData: Partial<GridFormField>;
+  onUpdateFieldData: (data: Partial<GridFormField>) => void;
+  onSaveFieldDetails: (data: Partial<GridFormField>) => void;
+  initialFieldData?: GridFormField;
+  dict: {
+    editField: string;
+    addNewField: string;
+    question: string;
+    enterQuestion: string;
+    required: string;
+    content: string;
+    enterContent: string;
+    options: string;
+    addOption: string;
+    removeOption: string;
+    description: string;
+    enterDesc: string;
+    save: string;
+    cancel: string;
+  };
+}
+
+// Update HeaderFooterModalProps interface
+interface HeaderFooterModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  type: 'header' | 'footer';
+  config: HeaderFooterConfig;
+  onChange: (config: HeaderFooterConfig) => void;
+  dict: {
+    title: string;
+    description: string;
+    uploadLogo: string;
+    changeLogo: string;
+    uploading: string;
+    maxChars: string;
+    text: string;
+    logo: string;
+    enable: string;
+    logoUploadError: {
+      invalidType: string;
+      tooLarge: string;
+      uploadFailed: string;
+    };
+    logoUploadSuccess: string;
+    close: string;
+  };
+}
+
+// Update FieldDetailsModal component to use the interface
 function FieldDetailsModal({
   isOpen,
   onClose,
@@ -457,15 +537,8 @@ function FieldDetailsModal({
   onUpdateFieldData,
   onSaveFieldDetails,
   initialFieldData,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  fieldType: FormFieldType | null;
-  fieldData: Partial<GridFormField>;
-  onUpdateFieldData: (data: Partial<GridFormField>) => void;
-  onSaveFieldDetails: (data: Partial<GridFormField>) => void;
-  initialFieldData?: GridFormField;
-}) {
+  dict,
+}: FieldDetailsModalProps) {
   // Determine the actual field type we are working with (either new or existing)
   const currentFieldType = fieldType || initialFieldData?.type || null;
 
@@ -498,17 +571,17 @@ function FieldDetailsModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{initialFieldData ? 'Edit Field Details' : `Add New ${fieldTypeConfig?.label || 'Field'} Field`}</DialogTitle>
+          <DialogTitle>{initialFieldData ? dict.editField : dict.addNewField}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4 flex-1 overflow-y-auto">
           {/* Question Input */}
           <div className="space-y-2">
-            <Label htmlFor="new-field-question">Question</Label>
+            <Label htmlFor="new-field-question">{dict.question}</Label>
             <Input
               id="new-field-question"
               value={currentFieldData.question || ''}
               onChange={handleQuestionChange}
-              placeholder="Enter question text"
+              placeholder={dict.enterQuestion}
             />
           </div>
 
@@ -520,18 +593,18 @@ function FieldDetailsModal({
                 checked={Boolean(currentFieldData.required)}
                 onCheckedChange={(checked) => handleRequiredChange(Boolean(checked))}
               />
-              <Label htmlFor="new-field-required">Required</Label>
+              <Label htmlFor="new-field-required">{dict.required}</Label>
             </div>
           )}
 
           {/* Rich Text Editor for RICH_TEXT type */}
           {currentFieldType === 'RICH_TEXT' && (
             <div className="space-y-2">
-              <Label>Content</Label>
+              <Label>{dict.content}</Label>
               <RichTextEditor
                 content={currentFieldData.description || '<p>Enter your content here...</p>'}
                 onChange={handleDescriptionChange}
-                placeholder="Enter your content here..."
+                placeholder={dict.enterContent}
                 readOnly={false}
               />
             </div>
@@ -540,11 +613,15 @@ function FieldDetailsModal({
           {/* Options Management for select types */}
           {(currentFieldType === 'MULTIPLE_CHOICE' || currentFieldType === 'CHECKBOX' || currentFieldType === 'DROPDOWN') && (
             <div className="space-y-2">
-              <Label>Options</Label>
+              <Label>{dict.options}</Label>
               <OptionManager
                 options={currentFieldData.options || ['Option 1',]}
                 onUpdate={handleOptionsChange}
                 fieldType={currentFieldType}
+                dict={{
+                  addOption: dict.addOption,
+                  removeOption: dict.removeOption,
+                }}
               />
             </div>
           )}
@@ -563,12 +640,12 @@ function FieldDetailsModal({
           )} */}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>{dict.cancel}</Button>
           <Button 
             onClick={() => onSaveFieldDetails(currentFieldData)} 
             disabled={!currentFieldData.question?.trim()}
           >
-            Save Changes
+            {dict.save}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -615,22 +692,17 @@ function ColorPickerField({
   );
 }
 
-// Add these interfaces after the existing interfaces
-interface HeaderFooterConfig {
-  logo?: string;
-  text?: string;
-  enabled: boolean;
-}
-
-// Add this component after the ColorPickerField component
+// Update HeaderFooterConfig component
 function HeaderFooterConfig({
   type,
   config,
   onChange,
+  dict,
 }: {
   type: 'header' | 'footer';
   config: HeaderFooterConfig;
   onChange: (config: HeaderFooterConfig) => void;
+  dict: HeaderFooterConfigDict;
 }) {
   const { toast } = useToast();
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -643,8 +715,8 @@ function HeaderFooterConfig({
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Invalid file type",
-        description: "Please upload an image file (PNG, JPG, GIF)",
+        title: "Error",
+        description: dict.logoUploadError.invalidType,
         variant: "destructive",
       });
       return;
@@ -653,8 +725,8 @@ function HeaderFooterConfig({
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 2MB",
+        title: "Error",
+        description: dict.logoUploadError.tooLarge,
         variant: "destructive",
       });
       return;
@@ -681,12 +753,12 @@ function HeaderFooterConfig({
       
       toast({
         title: "Success",
-        description: "Logo uploaded successfully",
+        description: dict.logoUploadSuccess,
       });
     } catch (error) {
       toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload logo",
+        title: "Error",
+        description: dict.logoUploadError.uploadFailed,
         variant: "destructive",
       });
     } finally {
@@ -699,7 +771,7 @@ function HeaderFooterConfig({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-medium">
-          Enable {type === 'header' ? 'Header' : 'Footer'}
+          {type === 'header' ? dict.enable : dict.enable}
         </Label>
         <Checkbox
           checked={config.enabled}
@@ -710,7 +782,7 @@ function HeaderFooterConfig({
       {config.enabled && (
         <>
           <div className="space-y-2">
-            <Label className="text-sm">Logo</Label>
+            <Label className="text-sm">{dict.logo}</Label>
             <div className="flex items-center gap-4">
               {config.logo && (
                 <div className="relative w-16 h-16">
@@ -747,12 +819,12 @@ function HeaderFooterConfig({
                   {isUploading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                      Uploading...
+                      {dict.uploading}
                     </>
                   ) : (
                     <>
                       <ImageIcon className="w-4 h-4 mr-2" />
-                      {config.logo ? 'Change Logo' : 'Upload Logo'}
+                      {config.logo ? dict.changeLogo : dict.uploadLogo}
                     </>
                   )}
                 </Button>
@@ -761,19 +833,18 @@ function HeaderFooterConfig({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm">Text Content</Label>
+            <Label className="text-sm">{dict.text}</Label>
             <RichTextEditor
               content={config.text || ''}
               onChange={(content) => {
-                // Limit text content to 500 characters
                 const limitedContent = content.slice(0, 500);
                 onChange({ ...config, text: limitedContent });
               }}
-              placeholder={`Enter ${type} text (max 500 characters)...`}
+              placeholder={`Enter ${type} text (max 500 ${dict.maxChars})...`}
               readOnly={false}
             />
             <p className="text-xs text-muted-foreground">
-              {config.text?.length || 0}/500 characters
+              {config.text?.length || 0}/500 {dict.maxChars}
             </p>
           </div>
         </>
@@ -782,27 +853,22 @@ function HeaderFooterConfig({
   );
 }
 
-// Add this new component after the HeaderFooterConfig component
+// Update HeaderFooterModal component
 function HeaderFooterModal({
   isOpen,
   onClose,
   type,
   config,
   onChange,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  type: 'header' | 'footer';
-  config: HeaderFooterConfig;
-  onChange: (config: HeaderFooterConfig) => void;
-}) {
+  dict,
+}: HeaderFooterModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{type === 'header' ? 'Header' : 'Footer'} Configuration</DialogTitle>
+          <DialogTitle>{dict.title}</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Configure the {type} with a logo and text
+            {dict.description}
           </p>
         </DialogHeader>
         <div className="py-4">
@@ -810,10 +876,21 @@ function HeaderFooterModal({
             type={type}
             config={config}
             onChange={onChange}
+            dict={{
+              uploadLogo: dict.uploadLogo,
+              changeLogo: dict.changeLogo,
+              uploading: dict.uploading,
+              maxChars: dict.maxChars,
+              text: dict.text,
+              logo: dict.logo,
+              enable: type === 'header' ? dict.enable : dict.enable,
+              logoUploadError: dict.logoUploadError,
+              logoUploadSuccess: dict.logoUploadSuccess,
+            }}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={onClose}>{dict.close}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -832,7 +909,100 @@ function HeaderFooterModal({
  * - Form validation
  * - Form saving and publishing
  */
-export function GridFormBuilder() {
+export interface GridFormBuilderProps {
+  dict: {
+    formTitle: string;
+    formDescription: string;
+    enterTitle: string;
+    enterDescription: string;
+    colors: string;
+    saving: string;
+    saveForm: string;
+    addHeader: string;
+    editHeader: string;
+    addFooter: string;
+    editFooter: string;
+    backgroundColor: string;
+    textColor: string;
+    addField: string;
+    formLayout: string;
+    dragFieldsHint: string;
+    livePreview: string;
+    previewHint: string;
+    untitledForm: string;
+    fieldTypes: {
+      shortAnswer: string;
+      paragraph: string;
+      richText: string;
+      multipleChoice: string;
+      checkboxes: string;
+      dropdown: string;
+      imageUpload: string;
+    };
+    validation: {
+      titleRequired: string;
+      fieldsRequired: string;
+      saveSuccess: string;
+      saveSuccessDesc: string;
+      saveError: string;
+      tryAgain: string;
+    };
+    header: {
+      title: string;
+      description: string;
+      logo: string;
+      text: string;
+      uploadLogo: string;
+      changeLogo: string;
+      uploading: string;
+      maxChars: string;
+      enable: string;
+      close: string;
+      logoUploadError: {
+        invalidType: string;
+        tooLarge: string;
+        uploadFailed: string;
+      };
+      logoUploadSuccess: string;
+    };
+    footer: {
+      title: string;
+      description: string;
+      logo: string;
+      text: string;
+      uploadLogo: string;
+      changeLogo: string;
+      uploading: string;
+      maxChars: string;
+      enable: string;
+      close: string;
+      logoUploadError: {
+        invalidType: string;
+        tooLarge: string;
+        uploadFailed: string;
+      };
+      logoUploadSuccess: string;
+    };
+    fieldDetails: {
+      editField: string;
+      addNewField: string;
+      question: string;
+      enterQuestion: string;
+      required: string;
+      content: string;
+      enterContent: string;
+      options: string;
+      addOption: string;
+      removeOption: string;
+      description: string;
+      enterDesc: string;
+      save: string;
+      cancel: string;
+    };
+  };
+}
+
+export function GridFormBuilder({ dict }: GridFormBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -1044,7 +1214,7 @@ export function GridFormBuilder() {
     if (!formTitle.trim()) {
       toast({
         title: "Error",
-        description: "Form title is required",
+        description: dict.validation.titleRequired,
         variant: "destructive",
       });
       return;
@@ -1055,7 +1225,7 @@ export function GridFormBuilder() {
     if (savableFields.length === 0) {
       toast({
         title: "Error",
-        description: "Add at least one field to the form (excluding the submit button)",
+        description: dict.validation.fieldsRequired,
         variant: "destructive",
       });
       return;
@@ -1175,8 +1345,8 @@ export function GridFormBuilder() {
 
       
       toast({
-        title: "Form saved successfully",
-        description: "Your form has been created and is ready to share.",
+        title: dict.validation.saveSuccess,
+        description: dict.validation.saveSuccessDesc,
       });
 
       router.push(`/dashboard?tab=my-forms`);
@@ -1204,22 +1374,22 @@ export function GridFormBuilder() {
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
               <div className="space-y-2 md:w-1/2">
-                <Label htmlFor="form-title" className="text-sm">Form Title</Label>
+                <Label htmlFor="form-title" className="text-sm">{dict.formTitle}</Label>
                 <Input
                   id="form-title"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="Enter form title"
+                  placeholder={dict.enterTitle}
                   className="text-base font-semibold h-10 bg-background"
                 />
               </div>
               <div className="space-y-2 md:w-1/2">
-                <Label htmlFor="form-description" className="text-sm">Form Description</Label>
+                <Label htmlFor="form-description" className="text-sm">{dict.formDescription}</Label>
                 <Textarea
                   id="form-description"
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Enter form description"
+                  placeholder={dict.enterDescription}
                   className="min-h-[42px] text-sm resize-none bg-background"
                 />
               </div>
@@ -1234,7 +1404,7 @@ export function GridFormBuilder() {
                       className="w-4 h-4 border" 
                       style={{ backgroundColor: formStyle.primaryColor }}
                     />
-                    Colors
+                    {dict.colors}
                   </div>
                 </Button>
                 <Button
@@ -1245,10 +1415,10 @@ export function GridFormBuilder() {
                   {isSaving ? (
                     <>
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Saving...
+                      {dict.saving}
                     </>
                   ) : (
-                    'Save Form'
+                    dict.saveForm
                   )}
                 </Button>
               </div>
@@ -1264,7 +1434,7 @@ export function GridFormBuilder() {
                 className="flex items-center gap-2"
               >
                 <ImageIcon className="h-4 w-4" />
-                {headerConfig.enabled ? 'Edit Header' : 'Add Header'}
+                {headerConfig.enabled ? dict.editHeader : dict.addHeader}
               </Button>
               <Button
                 variant="outline"
@@ -1272,7 +1442,7 @@ export function GridFormBuilder() {
                 className="flex items-center gap-2"
               >
                 <ImageIcon className="h-4 w-4" />
-                {footerConfig.enabled ? 'Edit Footer' : 'Add Footer'}
+                {footerConfig.enabled ? dict.editFooter : dict.addFooter}
               </Button>
             </div>
 
@@ -1283,6 +1453,7 @@ export function GridFormBuilder() {
               type="header"
               config={headerConfig}
               onChange={setHeaderConfig}
+              dict={dict.header}
             />
             <HeaderFooterModal
               isOpen={isFooterModalOpen}
@@ -1290,6 +1461,7 @@ export function GridFormBuilder() {
               type="footer"
               config={footerConfig}
               onChange={setFooterConfig}
+              dict={dict.footer}
             />
 
             {/* Color Picker */}
@@ -1297,12 +1469,12 @@ export function GridFormBuilder() {
               <div className="p-4 border rounded-lg bg-muted/50">
                 <div className="grid grid-cols-2 gap-4">
                   <ColorPickerField
-                    label="Background Color"
+                    label={dict.backgroundColor}
                     value={formStyle.backgroundColor}
                     onChange={(color) => setFormStyle(prev => ({ ...prev, backgroundColor: color }))}
                   />
                   <ColorPickerField
-                    label="Text Color"
+                    label={dict.textColor}
                     value={formStyle.textColor}
                     onChange={(color) => setFormStyle(prev => ({ ...prev, textColor: color }))}
                   />
@@ -1312,7 +1484,7 @@ export function GridFormBuilder() {
 
             {/* Field Types */}
             <div className="space-y-2">
-              <Label className="text-sm">Add Field</Label>
+              <Label className="text-sm">{dict.addField}</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 p-3 border border-border rounded-lg bg-muted/50">
                 {fieldTypes.map(({ type, label, icon: Icon }) => (
                   <Button
@@ -1335,9 +1507,9 @@ export function GridFormBuilder() {
           {/* Grid Layout */}
           <Card className="bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Form Layout</CardTitle>
+              <CardTitle className="text-lg">{dict.formLayout}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Drag fields to position and resize them in the grid
+                {dict.dragFieldsHint}
               </p>
             </CardHeader>
             <CardContent>
@@ -1396,6 +1568,7 @@ export function GridFormBuilder() {
                             );
                           }}
                           onDelete={handleDeleteField}
+                          dict={dict.fieldDetails}
                         />
                       </div>
                     ))}
@@ -1408,9 +1581,9 @@ export function GridFormBuilder() {
           {/* Live Preview */}
           <Card className="bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Live Preview</CardTitle>
+              <CardTitle className="text-lg">{dict.livePreview}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                See how your form will look to users
+                {dict.previewHint}
               </p>
             </CardHeader>
             <CardContent>
@@ -1418,7 +1591,7 @@ export function GridFormBuilder() {
                 <FormPreview 
                   form={{ 
                     id: 'preview', 
-                    title: formTitle || 'Untitled Form', 
+                    title: formTitle || dict.untitledForm, 
                     description: formDescription,
                     style: {
                       width: formStyle.width,
@@ -1465,6 +1638,7 @@ export function GridFormBuilder() {
           fieldData={newFieldData}
           onUpdateFieldData={setNewFieldData}
           onSaveFieldDetails={handleSaveFieldDetails}
+          dict={dict.fieldDetails}
         />
 
         <FieldDetailsModal
@@ -1489,22 +1663,27 @@ export function GridFormBuilder() {
               h: editingFieldData.h,
             });
           }}
-          onSaveFieldDetails={(updatedData) => {
-            if (!editingFieldData) return;
-            setEditingFieldData({
-              ...editingFieldData,
-              ...updatedData,
-              id: editingFieldData.id,
-              i: editingFieldData.i,
-              type: editingFieldData.type,
-              x: editingFieldData.x,
-              y: editingFieldData.y,
-              w: editingFieldData.w,
-              h: editingFieldData.h,
-            });
-            setIsEditingModalOpen(false);
-          }}
+          onSaveFieldDetails={handleSaveFieldDetails}
           initialFieldData={editingFieldData || undefined}
+          dict={dict.fieldDetails}
+        />
+
+        <HeaderFooterModal
+          isOpen={isHeaderModalOpen}
+          onClose={() => setIsHeaderModalOpen(false)}
+          type="header"
+          config={headerConfig}
+          onChange={setHeaderConfig}
+          dict={dict.header}
+        />
+
+        <HeaderFooterModal
+          isOpen={isFooterModalOpen}
+          onClose={() => setIsFooterModalOpen(false)}
+          type="footer"
+          config={footerConfig}
+          onChange={setFooterConfig}
+          dict={dict.footer}
         />
       </div>
     </>

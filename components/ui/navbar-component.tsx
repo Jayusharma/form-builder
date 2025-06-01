@@ -16,7 +16,8 @@ import {
   Bell,
   Moon,
   FileClock,
-  Sun
+  Sun,
+  Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,6 +33,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useDictionary } from '@/hooks/useDictionary';
 
 // Types for our user roles and user data
 type UserRole = 'GUEST' | 'USER' | 'ADMIN' | 'SADMIN'|'MANAGER';
@@ -44,9 +47,11 @@ interface UserData {
   imageUrl?: string;
 }
 
+type NavigationKey = 'dashboard' | 'profile' | 'settings' | 'manageUsers' | 'logs' | 'home' | 'login';
+
 interface NavigationItem {
-  name: string;
-  href: string;
+  key: NavigationKey;
+  href: `/${string}`;
   icon: React.ComponentType<{ className?: string }>;
 }
  
@@ -63,34 +68,33 @@ interface NavbarProps {
   role?: string;
 }
 
-// Example navigation items based on roles
+// Example navigation items based on roles with translation keys
 const navigationItems: NavigationItems = {
-
   USER: [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { key: 'dashboard', href: '/dashboard', icon: Home },
+    { key: 'profile', href: '/profile', icon: User },
+    { key: 'settings', href: '/settings', icon: Settings },
   ],
   ADMIN: [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { key: 'dashboard', href: '/dashboard', icon: Home },
+    { key: 'profile', href: '/profile', icon: User },
+    { key: 'settings', href: '/settings', icon: Settings },
   ],
   SADMIN: [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Manage Users', href: '/search', icon: Users },
-    { name: 'Logs', href: '/info/logs', icon: FileClock },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { key: 'dashboard', href: '/dashboard', icon: Home },
+    { key: 'manageUsers', href: '/search', icon: Users },
+    { key: 'logs', href: '/info/logs', icon: FileClock },
+    { key: 'profile', href: '/profile', icon: User },
+    { key: 'settings', href: '/settings', icon: Settings },
   ],
   GUEST: [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Login', href: '/login', icon: User },
+    { key: 'home', href: '/', icon: Home },
+    { key: 'login', href: '/login', icon: User },
   ],
   MANAGER: [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { key: 'dashboard', href: '/dashboard', icon: Home },
+    { key: 'profile', href: '/profile', icon: User },
+    { key: 'settings', href: '/settings', icon: Settings },
   ]
 };
 
@@ -102,6 +106,7 @@ export default function Navbar({ role }: NavbarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+  const dict = useDictionary();
 
   useEffect(() => {
     // If role is provided directly, use it
@@ -163,7 +168,7 @@ export default function Navbar({ role }: NavbarProps) {
                 <span className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
                   <Shield className="h-5 w-5 text-primary-foreground" />
                 </span>
-                <span className="ml-2 text-xl font-bold text-foreground">AppName</span>
+                <span className="ml-2 text-xl font-bold text-foreground">{dict.navbar.brand}</span>
               </Link>
             </div>
             
@@ -172,11 +177,10 @@ export default function Navbar({ role }: NavbarProps) {
               {navItems?.map((item: NavigationItem) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
-                // Hide Profile and Settings on md screens
-                const isHiddenOnMd = (item.name === 'Profile' || item.name === 'Settings') ? 'hidden lg:inline-flex' : 'inline-flex';
+                const isHiddenOnMd = (item.key === 'profile' || item.key === 'settings') ? 'hidden lg:inline-flex' : 'inline-flex';
                 return (
                   <Link
-                    key={item.name}
+                    key={item.key}
                     href={item.href}
                     className={`${isHiddenOnMd} items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       isActive
@@ -185,7 +189,7 @@ export default function Navbar({ role }: NavbarProps) {
                     }`}
                   >
                     <Icon className="mr-2 h-4 w-4" />
-                    {item.name}
+                    {dict.navbar.navigation[item.key]}
                   </Link>
                 );
               })}
@@ -203,8 +207,13 @@ export default function Navbar({ role }: NavbarProps) {
             >
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
+              <span className="sr-only">{dict.navbar.theme.toggleTheme}</span>
             </Button>
+
+            {/* Language Switcher */}
+            <div className="hidden sm:flex items-center">
+              <LanguageSwitcher />
+            </div>
 
             {/* User dropdown - only show if logged in */}
             {userData && (
@@ -232,19 +241,19 @@ export default function Navbar({ role }: NavbarProps) {
                     <DropdownMenuItem asChild>
                       <Link href="/profile" className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                        <span>{dict.navbar.userMenu.profile}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/settings" className="cursor-pointer">
                         <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
+                        <span>{dict.navbar.userMenu.settings}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                      <span>{dict.navbar.userMenu.logout}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -256,12 +265,12 @@ export default function Navbar({ role }: NavbarProps) {
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                    <span className="sr-only">Open menu</span>
+                    <span className="sr-only">{dict.navbar.mobileMenu.openMenu}</span>
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-64 sm:max-w-sm">
-                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                  <SheetTitle className="sr-only">{dict.navbar.screenReader.navigation}</SheetTitle>
                   <div className="px-2 pt-2 pb-3 space-y-1">
                     {/* Add theme toggle to mobile menu */}
                     <button
@@ -271,15 +280,20 @@ export default function Navbar({ role }: NavbarProps) {
                       {theme === "light" ? (
                         <>
                           <Moon className="mr-3 h-5 w-5" />
-                          Dark Mode
+                          {dict.navbar.theme.darkMode}
                         </>
                       ) : (
                         <>
                           <Sun className="mr-3 h-5 w-5" />
-                          Light Mode
+                          {dict.navbar.theme.lightMode}
                         </>
                       )}
                     </button>
+
+                    {/* Language Switcher in mobile menu */}
+                    <div className="px-3 py-2">
+                      <LanguageSwitcher />
+                    </div>
 
                     {/* Mobile user info if logged in */}
                     {userData && (
@@ -306,7 +320,7 @@ export default function Navbar({ role }: NavbarProps) {
                       const isActive = pathname === item.href;
                       return (
                         <Link
-                          key={item.name}
+                          key={item.key}
                           href={item.href}
                           className={` px-3 py-2 rounded-md text-base font-medium flex items-center ${
                             isActive
@@ -316,7 +330,7 @@ export default function Navbar({ role }: NavbarProps) {
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <Icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                          {item.name}
+                          {dict.navbar.navigation[item.key]}
                         </Link>
                       );
                     })}
@@ -331,7 +345,7 @@ export default function Navbar({ role }: NavbarProps) {
                         className=" w-full text-left px-3 py-2 rounded-md text-base font-medium text-destructive hover:bg-destructive/10 flex items-center"
                       >
                         <LogOut className="mr-3 h-5 w-5" aria-hidden="true" />
-                        Log out
+                        {dict.navbar.userMenu.logout}
                       </button>
                     )}
                   </div>

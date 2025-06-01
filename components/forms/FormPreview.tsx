@@ -32,6 +32,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { useDictionary } from '@/hooks/useDictionary';
 
 /**
  * Grid layout configuration constants
@@ -143,6 +144,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const dict = useDictionary();
 
   // Use submissionResponses in read-only mode
   const currentResponses = isReadOnly ? submissionResponses : responses;
@@ -195,15 +197,14 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Validate required fields
     const missingRequired = fields.filter(
       field => field.required && !responses[field.id]
     );
 
     if (missingRequired.length > 0) {
       toast({
-        title: "Required fields missing",
-        description: `Please fill in all required fields: ${missingRequired.map(f => f.question).join(', ')}`,
+        title: dict.formPreview.validation.requiredFields,
+        description: `${missingRequired.map(f => f.question).join(', ')}`,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -226,20 +227,19 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
 
       if (!response.ok) {
         if (response.status === 409) {
-          // Handle duplicate submission
           toast({
-            title: "Already Submitted",
+            title: dict.formPreview.submission.alreadySubmitted,
             description: (
               <div className="mt-2">
                 <p>{data.message}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Submitted on {new Date(data.submittedAt).toLocaleString()}
+                  {dict.formPreview.submission.submittedOn.replace("{0}", new Date(data.submittedAt).toLocaleString())}
                 </p>
-                <Link 
-                  href={`/submissions/${data.submissionId}`}
+                <Link
+                  href={`/submissions/${data.submissionId}` as `/${string}`}
                   className="text-primary hover:underline mt-2 inline-block"
                 >
-                  View your submission
+                  {dict.formPreview.submission.viewSubmission}
                 </Link>
               </div>
             ),
@@ -247,19 +247,19 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
           });
           return;
         }
-        throw new Error(data.error || data.message || 'Failed to submit form');
+        throw new Error(data.error || data.message || dict.formPreview.validation.submitError);
       }
 
       toast({
-        title: "Form submitted successfully",
-        description: "Thank you for your submission!",
+        title: dict.formPreview.validation.submitSuccess,
+        description: dict.formPreview.validation.thankYou,
       });
 
       setIsSubmitted(true);
     } catch (error) {
       toast({
-        title: "Error submitting form",
-        description: error instanceof Error ? error.message : "Please try again later.",
+        title: dict.formPreview.validation.submitError,
+        description: error instanceof Error ? error.message : dict.formPreview.validation.tryAgain,
         variant: "destructive",
       });
     } finally {
@@ -416,14 +416,14 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
       printWindow.document.close();
 
       toast({
-        title: "Print dialog opened",
-        description: "Your form is ready to print.",
+        title: dict.formPreview.print.dialogOpened,
+        description: dict.formPreview.print.ready,
       });
     } catch (error) {
       console.error('Print error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to open print window",
+        description: error instanceof Error ? error.message : dict.formPreview.print.error,
         variant: "destructive",
       });
     } finally {
@@ -744,7 +744,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
                     className="max-w-full h-auto rounded-none"
                   />
                 ) : (
-                  'No image uploaded'
+                  dict.formPreview.imageUpload.noImage
                 )}
               </div>
             ) : (
@@ -767,15 +767,15 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
                           onClick={() => setResponses(prev => ({ ...prev, [field.id]: null }))}
                           className="text-red-500 hover:text-red-700 rounded-none"
                         >
-                          Remove Image
+                          {dict.formPreview.imageUpload.remove}
                         </Button>
                       </>
                     ) : (
                       <>
                         <ImageIcon className="w-8 h-8 text-gray-400" />
                         <div className="text-sm text-gray-600">
-                          <p>Click to upload or drag and drop</p>
-                          <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                          <p>{dict.formPreview.imageUpload.clickToUpload}</p>
+                          <p className="text-xs text-gray-500">{dict.formPreview.imageUpload.fileTypes}</p>
                         </div>
                         <Input
                           type="file"
@@ -814,13 +814,13 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
 
                                 toast({
                                   title: "Success",
-                                  description: "Image uploaded successfully",
+                                  description: dict.formPreview.imageUpload.success,
                                 });
                               } catch (error) {
                                 console.error('Upload error:', error);
                                 toast({
                                   title: "Upload failed",
-                                  description: error instanceof Error ? error.message : "Failed to upload image",
+                                  description: error instanceof Error ? error.message : dict.formPreview.imageUpload.error,
                                   variant: "destructive",
                                 });
                               }
@@ -842,7 +842,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
                             color: style.textColor,
                           }}
                         >
-                          Choose File
+                          {dict.formPreview.buttons.chooseFile}
                         </Button>
                       </>
                     )}
@@ -861,17 +861,14 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
       case 'RICH_TEXT':
         return (
           <div className="space-y-1">
-            {/* <Label className={labelClasses}>
-              {field.question}
-            </Label> */}
             <div 
-              className="prose prose-sm max-w-none   border-0 rounded-none" 
+              className="prose prose-sm max-w-none border-0 rounded-none" 
               style={{ 
                 color: style.textColor,
                 fontFamily: style.fontFamily,
               }}
               dangerouslySetInnerHTML={{ 
-                __html: field.description || '<p>No content available</p>' 
+                __html: field.description || `<p>${dict.formPreview.noContent}</p>` 
               }}
             />
           </div>
@@ -892,7 +889,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
                 fontFamily: style.fontFamily,
               }}
             >
-              {field.question || 'Submit'}
+              {field.question || dict.formPreview.buttons.submit}
               {isSubmitting && (
                 <span 
                   className="ml-2 w-4 h-4 border-2 border-white border-t-transparent rounded-none animate-spin" 
@@ -911,7 +908,6 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
   return (
     <div className="w-full flex justify-center">
       <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full">
-        {/* Only show print button in read-only mode */}
         {isReadOnly && (
           <div className="flex justify-end mb-2">
             <Button
@@ -922,7 +918,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
               className="gap-2 h-8 hover:bg-transparent rounded-none focus:ring-0"
             >
               <PrinterIcon className="h-3 w-3" />
-              {isPrinting ? 'Preparing...' : 'Print'}
+              {isPrinting ? dict.formPreview.buttons.preparing : dict.formPreview.buttons.print}
             </Button>
           </div>
         )}
@@ -931,7 +927,6 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
           className="border border-border rounded-lg"
           style={{ backgroundColor: style.backgroundColor }}
         >
-          {/* Header */}
           {form.header && (
             <div className="border-b border-border p-4 flex items-center gap-4">
               {form.header.logo && (
@@ -976,10 +971,10 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
             {isSubmitted ? (
               <div className="text-center space-y-4" style={{ color: style.textColor }}>
                 <div className="text-xl font-semibold" style={{ color: style.textColor }}>
-                  Form Submitted Successfully!
+                  {dict.formPreview.submission.success}
                 </div>
                 <p className="text-sm opacity-80" style={{ color: style.textColor }}>
-                  Thank you for your submission. You can print your submission or close this page.
+                  {dict.formPreview.submission.thankYou}
                 </p>
                 {!isReadOnly && (
                   <div className="flex justify-center gap-4 mt-4">
@@ -992,7 +987,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
                         color: '#ffffff',
                       }}
                     >
-                      Close
+                      {dict.formPreview.buttons.close}
                     </Button>
                   </div>
                 )}
@@ -1046,14 +1041,12 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
             )}
           </form>
 
-          {/* Form ID and Submission Date */}
           <div className="flex justify-center">
             <div className="text-[10px] opacity-40 text-center" style={{ color: style.textColor }}>
               {form.id} • {isReadOnly && submissionDate && submissionDate.toLocaleString()}
             </div>
           </div>
 
-          {/* Footer */}
           {form.footer && (
             <div className="border-t border-border p-4 flex items-center gap-4">
               {form.footer.logo && (

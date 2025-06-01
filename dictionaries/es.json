@@ -1,0 +1,819 @@
+{
+  "common": {
+    "switchLanguage": "Cambiar Idioma",
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse",
+    "welcome": "Bienvenido",
+    "forms": "Formularios",
+    "createForm": "Crear Formulario",
+    "myForms": "Mis Formularios",
+    "settings": "Configuración"
+  },
+  "profile": {
+    "title": "Perfil",
+    "id": "ID",
+    "name": "Nombre",
+    "email": "Correo",
+    "role": "Rol",
+    "twoFactor": "2FA",
+    "adminCode": "Código de Admin",
+    "notSet": "No establecido",
+    "copySuccess": "¡Código de admin copiado al portapapeles!",
+    "copyError": "Error al copiar el código de admin",
+    "on": "ACTIVADO",
+    "off": "DESACTIVADO"
+  },
+  "formBuilder": {
+    "formTitle": "Título del Formulario",
+    "formDescription": "Descripción del Formulario",
+    "enterTitle": "Ingrese el título",
+    "enterDescription": "Ingrese la descripción",
+    "colors": "Colores",
+    "saving": "Guardando...",
+    "saveForm": "Guardar Formulario",
+    "addHeader": "Agregar Encabezado",
+    "editHeader": "Editar Encabezado",
+    "addFooter": "Agregar Pie de Página",
+    "editFooter": "Editar Pie de Página",
+    "backgroundColor": "Color de Fondo",
+    "textColor": "Color de Texto",
+    "addField": "Agregar Campo",
+    "formLayout": "Diseño del Formulario",
+    "dragFieldsHint": "Arrastra los campos para posicionarlos y cambiar su tamaño",
+    "livePreview": "Vista Previa",
+    "previewHint": "Vea cómo se verá su formulario para los usuarios",
+    "untitledForm": "Formulario sin Título",
+    "fieldTypes": {
+      "shortAnswer": "Respuesta Corta",
+      "paragraph": "Párrafo",
+      "richText": "Texto Enriquecido",
+      "multipleChoice": "Opción Múltiple",
+      "checkboxes": "Casillas de Verificación",
+      "dropdown": "Lista Desplegable",
+      "imageUpload": "Subir Imagen"
+    },
+    "validation": {
+      "titleRequired": "El título del formulario es obligatorio",
+      "fieldsRequired": "Agregue al menos un campo al formulario (excluyendo el botón de enviar)",
+      "saveSuccess": "Formulario guardado exitosamente",
+      "saveSuccessDesc": "Su formulario ha sido creado y está listo para compartir.",
+      "saveError": "Error al guardar el formulario",
+      "tryAgain": "Por favor, inténtelo de nuevo más tarde."
+    },
+    "header": {
+      "title": "Configuración del Encabezado",
+      "description": "Configure el encabezado con un logo y texto",
+      "logo": "Logo",
+      "text": "Contenido de Texto",
+      "uploadLogo": "Subir Logo",
+      "changeLogo": "Cambiar Logo",
+      "uploading": "Subiendo...",
+      "maxChars": "caracteres",
+      "enable": "Habilitar Encabezado",
+      "close": "Cerrar",
+      "logoUploadError": {
+        "invalidType": "Tipo de archivo inválido. Por favor, suba un archivo de imagen (PNG, JPG, GIF)",
+        "tooLarge": "Archivo demasiado grande. Por favor, suba una imagen menor a 2MB",
+        "uploadFailed": "Error al subir el logo"
+      },
+      "logoUploadSuccess": "Logo subido exitosamente"
+    },
+    "footer": {
+      "title": "Configuración del Pie de Página",
+      "description": "Configure el pie de página con un logo y texto",
+      "logo": "Logo",
+      "text": "Contenido de Texto",
+      "uploadLogo": "Subir Logo",
+      "changeLogo": "Cambiar Logo",
+      "uploading": "Subiendo...",
+      "maxChars": "caracteres",
+      "enable": "Habilitar Pie de Página",
+      "close": "Cerrar",
+      "logoUploadError": {
+        "invalidType": "Tipo de archivo inválido. Por favor, suba un archivo de imagen (PNG, JPG, GIF)",
+        "tooLarge": "Archivo demasiado grande. Por favor, suba una imagen menor a 2MB",
+        "uploadFailed": "Error al subir el logo"
+      },
+      "logoUploadSuccess": "Logo subido exitosamente"
+    },
+    "fieldDetails": {
+      "editField": "Editar Detalles del Campo",
+      "addNewField": "Agregar Nuevo Campo",
+      "question": "Pregunta",
+      "enterQuestion": "Ingrese el texto de la pregunta",
+      "required": "Obligatorio",
+      "content": "Contenido",
+      "enterContent": "Ingrese su contenido aquí...",
+      "options": "Opciones",
+      "addOption": "Agregar Opción",
+      "description": "Descripción (Opcional)",
+      "enterDesc": "Ingrese la descripción aquí...",
+      "save": "Guardar Cambios",
+      "cancel": "Cancelar",
+      "removeOption": "Eliminar opción"
+    }
+  },
+  "responses": {
+    "submissionDetails": "Detalles de la Respuesta",
+    "submittedAgo": "Enviado hace {0}",
+    "form": "Formulario",
+    "noSubmission": "No se encontró la respuesta",
+    "print": "Imprimir",
+    "preparing": "Preparando..."
+  },
+  "dashboard": {
+    "superAdmin": {
+      "title": "Panel de Super Administrador",
+      "welcomeBack": "Bienvenido de nuevo, Super Admin {0}",
+      "tabs": {
+        "myForms": "Mis Formularios",
+        "published": "Formularios Publicados",
+        "requests": "Solicitudes de Formularios",
+        "responses": "Todas las Respuestas"
+      },
+      "descriptions": {
+        "myForms": "Crea y administra tus formularios",
+        "published": "Ver y administrar todos los formularios publicados",
+        "requests": "Revisar y administrar todas las solicitudes de publicación",
+        "responses": "Ver y administrar respuestas de todos los formularios"
+      }
+    },
+    "admin": {
+      "title": "Panel de Administrador",
+      "welcomeBack": "Bienvenido de nuevo, Admin {0}",
+      "tabs": {
+        "myForms": "Mis Formularios",
+        "published": "Formularios Publicados",
+        "responses": "Mis Respuestas"
+      },
+      "descriptions": {
+        "myForms": "Crea y administra todos tus formularios",
+        "published": "Ver y administrar todos los formularios publicados",
+        "responses": "Ver respuestas solo de tus formularios"
+      }
+    },
+    "user": {
+      "title": "Panel de Usuario",
+      "welcomeBack": "Bienvenido de nuevo, {0}",
+      "organization": {
+        "title": "Organización",
+        "description": "Detalles de tu organización conectada",
+        "loading": "Cargando información de la organización...",
+        "unnamedAdmin": "Admin sin Nombre",
+        "error": "Error al cargar la información de la organización"
+      },
+      "tabs": {
+        "forms": "Formularios Disponibles",
+        "submissions": "Mis Envíos"
+      },
+      "descriptions": {
+        "forms": "Ver y completar formularios de tu organización",
+        "submissions": "Seguimiento del historial de tus envíos"
+      }
+    },
+    "adminForms": {
+      "loading": "Cargando...",
+      "error": "Error al cargar los formularios",
+      "noForms": "Aún no hay formularios disponibles de tu organización.",
+      "noResults": "Ningún formulario coincide con tus criterios de búsqueda.",
+      "search": {
+        "placeholder": "Buscar formularios..."
+      },
+      "sort": {
+        "newest": "Más Recientes Primero",
+        "oldest": "Más Antiguos Primero"
+      },
+      "form": {
+        "fillForm": "Completar Formulario",
+        "createdAt": "Creado el {0}"
+      }
+    },
+    "connectToAdmin": {
+      "title": "Conectar a Organización",
+      "description": "Ingresa el código de administrador de tu organización para comenzar",
+      "placeholder": "Ingresa el código de administrador",
+      "connect": "Conectar",
+      "connecting": "Conectando...",
+      "success": {
+        "title": "¡Éxito!",
+        "description": "Te has conectado a la organización"
+      },
+      "error": {
+        "title": "Error",
+        "defaultMessage": "Ocurrió un error inesperado",
+        "failedToConnect": "Error al conectar con el administrador"
+      }
+    },
+    "mySubmissions": {
+      "loading": "Cargando...",
+      "error": {
+        "fetchFailed": "Error al obtener los envíos",
+        "loadFailed": "Error al cargar los envíos"
+      },
+      "noSubmissions": "Aún no has enviado ningún formulario.",
+      "noResults": "Ningún envío coincide con tus criterios de búsqueda.",
+      "search": {
+        "placeholder": "Buscar envíos..."
+      },
+      "sort": {
+        "newest": "Más Recientes Primero",
+        "oldest": "Más Antiguos Primero"
+      },
+      "submission": {
+        "viewButton": "Ver Envío",
+        "submittedOn": "Enviado el {0}"
+      }
+    },
+    "manager": {
+      "title": "Panel de Gerente",
+      "welcomeBack": "Bienvenido de nuevo, Gerente {0}",
+      "tabs": {
+        "myForms": "Mis Formularios",
+        "published": "Formularios Publicados",
+        "responses": "Respuestas de Formularios"
+      },
+      "descriptions": {
+        "myForms": "Crea y administra tus formularios",
+        "published": "Ver y administrar tus formularios publicados",
+        "responses": "Ver respuestas solo de tus formularios"
+      }
+    }
+  },
+  "formPreview": {
+    "buttons": {
+      "print": "Imprimir",
+      "preparing": "Preparando...",
+      "close": "Cerrar",
+      "submit": "Enviar",
+      "chooseFile": "Elegir Archivo"
+    },
+    "imageUpload": {
+      "clickToUpload": "Haz clic para subir o arrastra y suelta",
+      "fileTypes": "PNG, JPG, GIF hasta 10MB",
+      "success": "Imagen subida exitosamente",
+      "error": "Error al subir la imagen",
+      "remove": "Eliminar Imagen",
+      "noImage": "No hay imagen subida"
+    },
+    "validation": {
+      "requiredFields": "Por favor, complete todos los campos requeridos:",
+      "submitSuccess": "Formulario enviado exitosamente",
+      "submitError": "Error al enviar el formulario",
+      "tryAgain": "Por favor, inténtelo de nuevo más tarde",
+      "thankYou": "¡Gracias por su envío!"
+    },
+    "submission": {
+      "success": "¡Formulario Enviado Exitosamente!",
+      "thankYou": "Gracias por su envío. Puede imprimir su envío o cerrar esta página.",
+      "alreadySubmitted": "Ya Enviado",
+      "submittedOn": "Enviado el {0}",
+      "viewSubmission": "Ver su envío"
+    },
+    "print": {
+      "dialogOpened": "Diálogo de impresión abierto",
+      "ready": "Su formulario está listo para imprimir.",
+      "error": "Error al abrir la ventana de impresión"
+    },
+    "noContent": "No hay contenido disponible"
+  },
+  "logs": {
+    "title": "Registros de Actividad de Formularios",
+    "description": "Monitorea la creación de formularios, envíos y otras actividades",
+    "metadata": {
+      "title": "Registros de Formularios | Panel de Administración",
+      "description": "Ver y analizar registros de actividad de formularios"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar registros...",
+      "level": {
+        "title": "Filtrar por nivel",
+        "all": "Todos los Niveles",
+        "error": "Error",
+        "warn": "Advertencia",
+        "info": "Información",
+        "debug": "Depuración"
+      },
+      "event": {
+        "title": "Filtrar por evento",
+        "all": "Todos los Eventos",
+        "formCreated": "Formulario Creado",
+        "formSubmitted": "Formulario Enviado",
+        "formMadePrivate": "Hecho Privado",
+        "formMadePublic": "Hecho Público",
+        "formDeleted": "Formulario Eliminado"
+      }
+    },
+    "table": {
+      "headers": {
+        "timestamp": "Fecha y Hora",
+        "level": "Nivel",
+        "event": "Evento",
+        "form": "Formulario",
+        "user": "Usuario"
+      },
+      "loading": "Cargando registros...",
+      "noLogs": {
+        "title": "No se encontraron registros",
+        "description": "Asegúrate de tener los permisos correctos y que existan archivos de registro."
+      },
+      "noResults": {
+        "title": "Ningún registro coincide con tus filtros",
+        "description": "Intenta ajustar tu búsqueda o filtros."
+      },
+      "tooltips": {
+        "event": "Evento: {0}",
+        "raw": "Raw: {0}",
+        "form": {
+          "id": "ID: {0}"
+        },
+        "user": {
+          "title": "Usuario: {0}",
+          "id": "ID: {0}"
+        }
+      }
+    },
+    "actions": {
+      "refresh": "Actualizar registros",
+      "export": "Exportar registros",
+      "tryAgain": "Intentar de Nuevo"
+    },
+    "errors": {
+      "title": "Error al cargar registros:",
+      "fetchFailed": "Error al obtener registros: {0}",
+      "invalidData": "Datos de registro inválidos recibidos del servidor"
+    }
+  },
+  "review": {
+    "metadata": {
+      "title": "Revisión de Formulario | Panel de Administración",
+      "description": "Revisar solicitudes de publicación de formularios"
+    },
+    "actions": {
+      "backToRequests": "Volver a Solicitudes",
+      "rejectRequest": "Rechazar Solicitud",
+      "acceptRequest": "Aceptar Solicitud",
+      "cancel": "Cancelar",
+      "reject": "Rechazar",
+      "accept": "Aceptar"
+    },
+    "confirmations": {
+      "reject": {
+        "title": "¿Estás seguro de que quieres rechazar esta solicitud?",
+        "description": "Esta acción no se puede deshacer. La solicitud del formulario se eliminará permanentemente."
+      },
+      "accept": {
+        "title": "¿Estás seguro de que quieres aceptar esta solicitud?",
+        "description": "Esto publicará el formulario y lo hará disponible al público. La solicitud se eliminará de las solicitudes pendientes."
+      }
+    },
+    "notifications": {
+      "accept": {
+        "success": {
+          "title": "Solicitud aceptada",
+          "description": "El formulario ha sido publicado exitosamente."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Error al aceptar la solicitud"
+        }
+      },
+      "reject": {
+        "success": {
+          "title": "Solicitud rechazada",
+          "description": "La solicitud ha sido rechazada exitosamente."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Error al rechazar la solicitud"
+        }
+      }
+    }
+  },
+  "search": {
+    "metadata": {
+      "title": "Búsqueda de Usuarios | Panel de Administración",
+      "description": "Buscar y gestionar usuarios del sistema"
+    },
+    "placeholder": "Buscar usuarios...",
+    "errors": {
+      "fetchFailed": "Error al obtener usuarios",
+      "searchFailed": "Error al buscar usuarios"
+    },
+    "states": {
+      "loading": "Cargando usuarios...",
+      "noResults": "No se encontraron usuarios"
+    },
+    "table": {
+      "headers": {
+        "name": "Nombre",
+        "email": "Correo",
+        "role": "Rol",
+        "forms": "Formularios"
+      }
+    }
+  },
+  "settings": {
+    "metadata": {
+      "title": "Configuración | Gestión de Cuenta",
+      "description": "Administra la configuración y preferencias de tu cuenta"
+    },
+    "title": "Configuración",
+    "messages": {
+      "error": "¡Algo salió mal!"
+    },
+    "form": {
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingresa tu nombre"
+      },
+      "email": {
+        "label": "Correo",
+        "placeholder": "Ingresa tu correo"
+      },
+      "password": {
+        "current": {
+          "label": "Contraseña Actual",
+          "placeholder": "Ingresa tu contraseña actual"
+        },
+        "new": {
+          "label": "Nueva Contraseña",
+          "placeholder": "Ingresa tu nueva contraseña"
+        }
+      },
+      "twoFactor": {
+        "label": "Autenticación de Dos Factores",
+        "description": "Habilita la autenticación de dos factores para tu cuenta"
+      }
+    },
+    "actions": {
+      "save": "Guardar Cambios"
+    }
+  },
+  "submissions": {
+    "metadata": {
+      "title": "Detalles de Envío | Gestión de Formularios",
+      "description": "Ver detalles de tu envío de formulario"
+    },
+    "details": {
+      "title": "Detalles del Envío",
+      "submitted": "Enviado hace {0}",
+      "noSubmission": "No se encontró el envío",
+      "unauthorized": "No estás autorizado para ver este envío"
+    }
+  },
+  "userEdit": {
+    "metadata": {
+      "title": "Editar Usuario | Panel de Administración",
+      "description": "Gestionar detalles y permisos del usuario"
+    },
+    "title": "Editar Usuario",
+    "description": "Gestionar detalles y permisos del usuario",
+    "messages": {
+      "loadError": "Error al cargar datos del usuario",
+      "updateError": "Error al actualizar usuario",
+      "updateSuccess": "Usuario actualizado exitosamente",
+      "deleteError": "Error al eliminar usuario",
+      "deleteSuccess": "Usuario eliminado exitosamente"
+    },
+    "form": {
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingresa el nombre del usuario"
+      },
+      "email": {
+        "label": "Correo",
+        "placeholder": "Ingresa el correo del usuario"
+      },
+      "role": {
+        "label": "Rol",
+        "placeholder": "Selecciona el rol del usuario",
+        "options": {
+          "user": "Usuario",
+          "manager": "Gerente",
+          "admin": "Administrador",
+          "sadmin": "Super Administrador"
+        }
+      },
+      "twoFactor": {
+        "label": "Autenticación de Dos Factores",
+        "description": "Habilitar autenticación de dos factores para este usuario"
+      },
+      "adminCode": {
+        "label": "Código de Administrador",
+        "noCode": "Sin código",
+        "copy": "Copiar",
+        "copied": "¡Copiado!"
+      }
+    },
+    "actions": {
+      "save": "Guardar Cambios",
+      "delete": {
+        "button": "Eliminar Usuario",
+        "title": "Eliminar Usuario",
+        "description": "¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer.",
+        "confirm": "Eliminar",
+        "cancel": "Cancelar"
+      }
+    },
+    "notFound": {
+      "title": "Usuario No Encontrado",
+      "description": "No se pudo encontrar el usuario solicitado.",
+      "action": "Volver a Usuarios"
+    }
+  },
+  "formActions": {
+    "menuItems": {
+      "requestPublic": "Solicitar Público",
+      "publicRequestPending": "Solicitud Pública Pendiente",
+      "reuseForm": "Reutilizar Formulario",
+      "viewForm": "Ver Formulario",
+      "viewSubmissions": "Ver Envíos ({0})",
+      "shareForm": "Compartir Formulario",
+      "makePrivate": "Hacer Privado"
+    },
+    "share": {
+      "title": "Compartir {0}",
+      "text": "Mira este formulario: {0}",
+      "copied": {
+        "title": "¡Enlace copiado!",
+        "description": "El enlace ha sido copiado al portapapeles."
+      }
+    },
+    "notifications": {
+      "makePrivate": {
+        "success": {
+          "title": "Formulario hecho privado",
+          "description": "El formulario ha sido hecho privado exitosamente."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Error al hacer el formulario privado"
+        }
+      },
+      "requestPublic": {
+        "success": {
+          "title": "Solicitud enviada",
+          "description": "Tu solicitud para hacer público el formulario ha sido enviada."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Error al enviar la solicitud"
+        }
+      }
+    }
+  },
+  "formResponses": {
+    "loading": "Cargando formularios...",
+    "noForms": {
+      "admin": "Aún no has creado ningún formulario.",
+      "manager": "No hay formularios disponibles en el sistema.",
+      "default": "No hay formularios disponibles."
+    },
+    "select": {
+      "placeholder": "Seleccionar un formulario",
+      "responses": "{0} respuesta",
+      "responses_plural": "{0} respuestas"
+    },
+    "responses": {
+      "title": "Respuestas para \"{0}\"",
+      "noResponses": "Aún no hay respuestas para este formulario.",
+      "responseNumber": "Respuesta #{0}",
+      "timeAgo": "hace {0}"
+    }
+  },
+  "myForms": {
+    "actions": {
+      "createNew": "Crear Nuevo Formulario",
+      "createFirst": "Crear Tu Primer Formulario"
+    },
+    "search": {
+      "placeholder": "Buscar tus formularios..."
+    },
+    "sort": {
+      "newest": "Más Recientes Primero",
+      "oldest": "Más Antiguos Primero",
+      "mostSubmissions": "Más Respuestas",
+      "leastSubmissions": "Menos Respuestas"
+    },
+    "status": {
+      "published": "Publicado",
+      "notPublished": "No Publicado"
+    },
+    "loading": {
+      "error": {
+        "title": "Error",
+        "fetchFailed": "Error al cargar los formularios"
+      }
+    },
+    "empty": {
+      "title": "No Se Encontraron Formularios",
+      "noResults": "Ningún formulario coincide con tus criterios de búsqueda.",
+      "noForms": "Aún no has creado ningún formulario."
+    },
+    "form": {
+      "noDescription": "Sin descripción",
+      "lastUpdated": "Actualizado hace {0}",
+      "submissions": {
+        "single": "{0} respuesta",
+        "multiple": "{0} respuestas"
+      }
+    }
+  },
+  "publicRequest": {
+    "loading": "Cargando solicitudes...",
+    "empty": {
+      "noResults": "Ninguna solicitud coincide con tus criterios de búsqueda.",
+      "noRequests": "No hay solicitudes de formularios pendientes."
+    },
+    "search": {
+      "placeholder": "Buscar solicitudes..."
+    },
+    "sort": {
+      "newest": "Más Recientes Primero",
+      "oldest": "Más Antiguos Primero",
+      "pending": "Pendientes Primero",
+      "accepted": "Aceptados Primero"
+    },
+    "request": {
+      "requestedBy": "Solicitado por {0}",
+      "status": {
+        "approved": "APROBADO",
+        "pending": "PENDIENTE"
+      },
+      "actions": {
+        "review": "Revisar"
+      }
+    },
+    "notifications": {
+      "error": {
+        "fetchFailed": "Error al obtener las solicitudes",
+        "invalidResponse": "Formato de respuesta inválido",
+        "loadFailed": "Error al cargar las solicitudes de formularios",
+        "actionFailed": "Error al {0} la solicitud"
+      },
+      "success": {
+        "actionSuccess": "Solicitud {0} exitosamente"
+      }
+    }
+  },
+  "publishedForms": {
+    "loading": {
+      "title": "Cargando Formularios",
+      "error": {
+        "title": "Error",
+        "fetchFailed": "Error al obtener los formularios publicados",
+        "defaultError": "Ocurrió un error"
+      }
+    },
+    "empty": {
+      "title": "No Se Encontraron Formularios",
+      "noResults": "Ningún formulario coincide con tus criterios de búsqueda.",
+      "noForms": "No hay formularios publicados disponibles en este momento."
+    },
+    "search": {
+      "placeholder": "Buscar formularios..."
+    },
+    "sort": {
+      "newest": "Más Recientes Primero",
+      "oldest": "Más Antiguos Primero",
+      "mostSubmissions": "Más Respuestas",
+      "leastSubmissions": "Menos Respuestas"
+    },
+    "form": {
+      "noDescription": "Sin descripción",
+      "creator": {
+        "title": "Creado por"
+      },
+      "lastUpdated": "Actualizado hace {0}",
+      "submissions": {
+        "single": "{0} respuesta",
+        "multiple": "{0} respuestas"
+      }
+    }
+  },
+  "userInfo": {
+    "notifications": {
+      "adminCode": {
+        "copySuccess": "¡Código de administrador copiado al portapapeles!",
+        "copyError": "Error al copiar el código de administrador"
+      }
+    },
+    "fields": {
+      "id": "ID",
+      "name": "Nombre",
+      "email": "Correo",
+      "role": "Rol",
+      "adminCode": "Código de Administrador",
+      "twoFactor": "Autenticación de Dos Factores"
+    },
+    "values": {
+      "notSet": "No establecido",
+      "noAdminCode": "No hay código de administrador disponible",
+      "twoFactor": {
+        "on": "Activado",
+        "off": "Desactivado"
+      }
+    }
+  },
+  "navbar": {
+    "brand": "AppName",
+    "navigation": {
+      "dashboard": "Panel",
+      "profile": "Perfil",
+      "settings": "Configuración",
+      "manageUsers": "Gestionar Usuarios",
+      "logs": "Registros",
+      "home": "Inicio",
+      "login": "Iniciar Sesión"
+    },
+    "theme": {
+      "toggleTheme": "Cambiar tema",
+      "darkMode": "Modo Oscuro",
+      "lightMode": "Modo Claro"
+    },
+    "language": {
+      "title": "Idioma"
+    },
+    "userMenu": {
+      "profile": "Perfil",
+      "settings": "Configuración",
+      "logout": "Cerrar Sesión"
+    },
+    "mobileMenu": {
+      "openMenu": "Abrir menú"
+    },
+    "screenReader": {
+      "navigation": "Menú de Navegación"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "description": "Ingresa tu correo para iniciar sesión en tu cuenta",
+      "emailLabel": "Correo",
+      "emailPlaceholder": "ejemplo@gmail.com",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "******",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "submitButton": "Iniciar Sesión",
+      "confirmButton": "Confirmar",
+      "twoFactorLabel": "Código de Dos Factores",
+      "twoFactorPlaceholder": "123456",
+      "orContinueWith": "O continuar con",
+      "noAccount": "¿No tienes una cuenta?",
+      "oauthError": "¡Correo ya en uso con otro proveedor!"
+    },
+    "register": {
+      "title": "Crear una cuenta",
+      "description": "Ingresa tus credenciales para registrar una nueva cuenta",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "Juan Pérez",
+      "emailLabel": "Correo",
+      "emailPlaceholder": "ejemplo@gmail.com",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "******",
+      "submitButton": "Crear cuenta",
+      "orContinueWith": "O continuar con",
+      "haveAccount": "¿Ya tienes una cuenta?"
+    },
+    "signup": "Registrarse",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "verifyEmail": "Verificar Correo",
+    "twoFactor": "Autenticación de Dos Factores",
+    "error": {
+      "title": "Algo salió mal",
+      "backToLogin": "Volver al inicio de sesión"
+    },
+    "newPassword": {
+      "title": "Nueva contraseña",
+      "description": "Ingresa tu nueva contraseña",
+      "passwordLabel": "Nueva contraseña",
+      "passwordPlaceholder": "******",
+      "submitButton": "Restablecer contraseña",
+      "backToLogin": "Volver al inicio de sesión"
+    },
+    "verification": {
+      "title": "Confirmando tu verificación",
+      "loading": "Confirmando tu verificación",
+      "backToLogin": "Volver al inicio de sesión",
+      "error": {
+        "missingToken": "Token faltante",
+        "default": "¡Algo salió mal!"
+      }
+    },
+    "reset": {
+      "title": "¿Olvidaste tu contraseña?",
+      "description": "Ingresa tu correo para restablecer tu contraseña",
+      "emailLabel": "Correo",
+      "emailPlaceholder": "ejemplo@gmail.com",
+      "submitButton": "Enviar enlace de restablecimiento",
+      "backToLogin": "Volver al inicio de sesión"
+    }
+  },
+  "notFound": {
+    "title": "404 - Página no encontrada",
+    "description": "La página que estás buscando no existe.",
+    "returnHome": "Volver al inicio"
+  }
+} 

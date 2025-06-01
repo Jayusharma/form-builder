@@ -37,6 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * LogEntry Interface
@@ -55,7 +56,7 @@ interface LogEntry {
 }
 
 export function LogsViewer() {
-  // State management for logs and UI controls
+  const dict = useDictionary();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export function LogsViewer() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         console.error("Error response:", errorData);
-        throw new Error(errorData?.error || `Failed to fetch logs: ${response.status}`);
+        throw new Error(errorData?.error || dict.logs.errors.fetchFailed.replace("{0}", response.status.toString()));
       }
       
       const data = await response.json();
@@ -87,13 +88,13 @@ export function LogsViewer() {
       
       if (!Array.isArray(data.logs)) {
         console.error("Invalid logs data:", data);
-        throw new Error("Invalid logs data received from server");
+        throw new Error(dict.logs.errors.invalidData);
       }
       
       setLogs(data.logs);
     } catch (err) {
       console.error("Error fetching logs:", err);
-      setError(err instanceof Error ? err.message : "Failed to load logs");
+      setError(err instanceof Error ? err.message : dict.logs.errors.fetchFailed.replace("{0}", ""));
     } finally {
       setLoading(false);
     }
@@ -226,7 +227,7 @@ export function LogsViewer() {
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search logs..."
+              placeholder={dict.logs.filters.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8"
@@ -234,27 +235,27 @@ export function LogsViewer() {
           </div>
           {/* <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by level" />
+              <SelectValue placeholder={dict.logs.filters.level.title} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="error">Error</SelectItem>
-              <SelectItem value="warn">Warning</SelectItem>
-              <SelectItem value="info">Info</SelectItem>
-              <SelectItem value="debug">Debug</SelectItem>
+              <SelectItem value="all">{dict.logs.filters.level.all}</SelectItem>
+              <SelectItem value="error">{dict.logs.filters.level.error}</SelectItem>
+              <SelectItem value="warn">{dict.logs.filters.level.warn}</SelectItem>
+              <SelectItem value="info">{dict.logs.filters.level.info}</SelectItem>
+              <SelectItem value="debug">{dict.logs.filters.level.debug}</SelectItem>
             </SelectContent>
           </Select> */}
           <Select value={eventFilter} onValueChange={setEventFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by event" />
+              <SelectValue placeholder={dict.logs.filters.event.title} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Events</SelectItem>
-              <SelectItem value="FORM_CREATED">Form Created</SelectItem>
-              <SelectItem value="FORM_SUBMITTED">Form Submitted</SelectItem>
-              <SelectItem value="FORM_MADE_PRIVATE">Made Private</SelectItem>
-              <SelectItem value="FORM_MADE_PUBLIC">Made Public</SelectItem>
-              <SelectItem value="FORM_DELETED">Form Deleted</SelectItem>
+              <SelectItem value="all">{dict.logs.filters.event.all}</SelectItem>
+              <SelectItem value="FORM_CREATED">{dict.logs.filters.event.formCreated}</SelectItem>
+              <SelectItem value="FORM_SUBMITTED">{dict.logs.filters.event.formSubmitted}</SelectItem>
+              <SelectItem value="FORM_MADE_PRIVATE">{dict.logs.filters.event.formMadePrivate}</SelectItem>
+              <SelectItem value="FORM_MADE_PUBLIC">{dict.logs.filters.event.formMadePublic}</SelectItem>
+              <SelectItem value="FORM_DELETED">{dict.logs.filters.event.formDeleted}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -264,6 +265,7 @@ export function LogsViewer() {
             size="icon"
             onClick={fetchLogs}
             disabled={loading}
+            title={dict.logs.actions.refresh}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
@@ -272,6 +274,7 @@ export function LogsViewer() {
             size="icon"
             onClick={exportLogs}
             disabled={loading || filteredLogs.length === 0}
+            title={dict.logs.actions.export}
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -280,7 +283,7 @@ export function LogsViewer() {
 
       {error && (
         <div className="bg-red-50 text-red-800 p-4 rounded-md mb-4">
-          <p className="font-semibold">Error loading logs:</p>
+          <p className="font-semibold">{dict.logs.errors.title}</p>
           <p className="mt-1">{error}</p>
           <Button
             variant="outline"
@@ -288,7 +291,7 @@ export function LogsViewer() {
             className="mt-2"
             onClick={fetchLogs}
           >
-            Try Again
+            {dict.logs.actions.tryAgain}
           </Button>
         </div>
       )}
@@ -297,11 +300,11 @@ export function LogsViewer() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Form</TableHead>
-              <TableHead>User</TableHead>
+              <TableHead>{dict.logs.table.headers.timestamp}</TableHead>
+              <TableHead>{dict.logs.table.headers.level}</TableHead>
+              <TableHead>{dict.logs.table.headers.event}</TableHead>
+              <TableHead>{dict.logs.table.headers.form}</TableHead>
+              <TableHead>{dict.logs.table.headers.user}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -309,7 +312,7 @@ export function LogsViewer() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  <p className="mt-2 text-muted-foreground">Loading logs...</p>
+                  <p className="mt-2 text-muted-foreground">{dict.logs.table.loading}</p>
                 </TableCell>
               </TableRow>
             ) : filteredLogs.length === 0 ? (
@@ -317,16 +320,16 @@ export function LogsViewer() {
                 <TableCell colSpan={6} className="text-center py-8">
                   {logs.length === 0 ? (
                     <div>
-                      <p>No logs found</p>
+                      <p>{dict.logs.table.noLogs.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Make sure you have the correct permissions and log files exist.
+                        {dict.logs.table.noLogs.description}
                       </p>
                     </div>
                   ) : (
                     <div>
-                      <p>No logs match your filters</p>
+                      <p>{dict.logs.table.noResults.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Try adjusting your search or filters.
+                        {dict.logs.table.noResults.description}
                       </p>
                     </div>
                   )}
@@ -352,10 +355,10 @@ export function LogsViewer() {
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Event: {log.event || "N/A"}</p>
+                          <p>{dict.logs.table.tooltips.event.replace("{0}", log.event || "N/A")}</p>
                           {log.rawMessage && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              Raw: {log.rawMessage}
+                              {dict.logs.table.tooltips.raw.replace("{0}", log.rawMessage)}
                             </p>
                           )}
                         </TooltipContent>
@@ -373,7 +376,11 @@ export function LogsViewer() {
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>{log.formTitle}</p>
-                            {log.formId && <p className="text-xs text-muted-foreground">ID: {log.formId}</p>}
+                            {log.formId && (
+                              <p className="text-xs text-muted-foreground">
+                                {dict.logs.table.tooltips.form.id.replace("{0}", log.formId)}
+                              </p>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -390,34 +397,16 @@ export function LogsViewer() {
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>User: {log.userName || "N/A"}</p>
-                          {log.userId && <p className="text-xs text-muted-foreground">ID: {log.userId}</p>}
+                          <p>{dict.logs.table.tooltips.user.title.replace("{0}", log.userName || "N/A")}</p>
+                          {log.userId && (
+                            <p className="text-xs text-muted-foreground">
+                              {dict.logs.table.tooltips.user.id.replace("{0}", log.userId)}
+                            </p>
+                          )}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </TableCell>
-                  {/* <TableCell>
-                    {log.additionalInfo ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="max-w-[300px] truncate">
-                              {Object.entries(log.additionalInfo)
-                                .map(([key, value]) => `${key}: ${value}`)
-                                .join(", ")}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-[400px]">
-                            <pre className="whitespace-pre-wrap text-sm">
-                              {JSON.stringify(log.additionalInfo, null, 2)}
-                            </pre>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell> */}
                 </TableRow>
               ))
             )}

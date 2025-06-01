@@ -14,7 +14,8 @@
 "use client";
 import type React from "react";
 import { useTransition } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -34,6 +35,8 @@ import { FormSuccess } from "../form-success";
 import { register } from "@/actions/register";
 import { Social } from "@/components/auth/social";
 import { BackButton } from "./BackButton";
+import { getClientDictionary } from "@/lib/client-dictionary";
+import { Locale } from "@/app/i18n.config";
 
 /**
  * RegisterComp Component
@@ -63,10 +66,21 @@ function RegisterComp() {
     },
   });
 
+  // Get locale from URL params
+  const { locale } = useParams();
+
   // Component state management
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
+  const [dict, setDict] = useState<any>(null);
+
+  // Load dictionary
+  useEffect(() => {
+    getClientDictionary(locale as Locale).then((d) => setDict(d));
+  }, [locale]);
+
+  if (!dict) return null;
 
   /**
    * Handles form submission and user registration
@@ -96,15 +110,15 @@ function RegisterComp() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Create an account
+            {dict.auth.register.title}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your credentials to register a new account
+            {dict.auth.register.description}
           </p>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="spce-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <FormField
@@ -112,11 +126,11 @@ function RegisterComp() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{dict.auth.register.nameLabel}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="jitendra Singh"
+                          placeholder={dict.auth.register.namePlaceholder}
                           disabled={isPending}
                         />
                       </FormControl>
@@ -130,11 +144,11 @@ function RegisterComp() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-black">Email</FormLabel>
+                      <FormLabel>{dict.auth.register.emailLabel}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="example@gmail.com"
+                          placeholder={dict.auth.register.emailPlaceholder}
                           type="email"
                           disabled={isPending}
                         />
@@ -149,12 +163,12 @@ function RegisterComp() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{dict.auth.register.passwordLabel}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="******"
-                          type="Password"
+                          placeholder={dict.auth.register.passwordPlaceholder}
+                          type="password"
                           disabled={isPending}
                         />
                       </FormControl>
@@ -165,8 +179,8 @@ function RegisterComp() {
               </div>
               <FormSuccess message={success} />
               <FormError message={error} />
-              <Button type="submit" className="w-full">
-                Create an account
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {dict.auth.register.submitButton}
               </Button>
             </div>
           </form>
@@ -178,14 +192,14 @@ function RegisterComp() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+              {dict.auth.register.orContinueWith}
             </span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Social />
         </div>
-        <BackButton href="/auth/login" label="Already have an account ?" />
+        <BackButton href={`/${locale}/auth/login`} label={dict.auth.register.haveAccount} />
       </div>
     </div>
   );

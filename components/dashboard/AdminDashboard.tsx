@@ -18,13 +18,14 @@
 
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import PublishedFormsList from "@/components/forms/PublishedFormsList";
 import FormResponses from "@/components/forms/FormResponses";
 import MyForms from "@/components/forms/MyForms";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * AdminDashboardProps Interface
@@ -45,22 +46,16 @@ const VALID_TABS = ["my-forms", "published", "responses"] as const;
 type TabValue = typeof VALID_TABS[number];
 
 /**
- * AdminDashboard Component
- * Renders the admin dashboard interface with tabbed navigation
- * 
- * @param {AdminDashboardProps} props - Component props
- * @returns {JSX.Element} Rendered admin dashboard interface
+ * DashboardContent Component
+ * Internal component that renders the dashboard content
  */
-export default function AdminDashboard({ userName }: AdminDashboardProps) {
-  // Router and search params setup
+function DashboardContent({ userName }: AdminDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
   const currentTab = searchParams.get("tab") as TabValue;
+  const dict = useDictionary();
 
-  /**
-   * Validates and sets default tab if needed
-   * Ensures a valid tab is always selected
-   */
   useEffect(() => {
     if (!currentTab || !VALID_TABS.includes(currentTab)) {
       const params = new URLSearchParams(searchParams.toString());
@@ -69,12 +64,6 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
     }
   }, [currentTab, router, searchParams]);
 
-  /**
-   * Handles tab changes
-   * Updates URL with selected tab
-   * 
-   * @param {string} value - New tab value
-   */
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", value);
@@ -85,9 +74,9 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
     <div className="container mx-auto py-8">
       {/* Dashboard Header */}
       <div className="flex flex-col items-center text-center mb-8">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold">{dict.dashboard.admin.title}</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, Admin {userName}
+          {dict.dashboard.admin.welcomeBack.replace("{0}", userName)}
         </p>
       </div>
 
@@ -99,18 +88,18 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
       >
         {/* Tab Triggers */}
         <TabsList className="md:flex-row flex-col w-full justify-center">
-          <TabsTrigger value="my-forms">My Forms</TabsTrigger>
-          <TabsTrigger value="published">Published Forms</TabsTrigger>
-          <TabsTrigger value="responses">My Form Responses</TabsTrigger>
+          <TabsTrigger value="my-forms">{dict.dashboard.admin.tabs.myForms}</TabsTrigger>
+          <TabsTrigger value="published">{dict.dashboard.admin.tabs.published}</TabsTrigger>
+          <TabsTrigger value="responses">{dict.dashboard.admin.tabs.responses}</TabsTrigger>
         </TabsList>
 
         {/* My Forms Tab Content */}
         <TabsContent value="my-forms" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>My Forms</CardTitle>
+              <CardTitle>{dict.dashboard.admin.tabs.myForms}</CardTitle>
               <CardDescription>
-                Create and manage all your forms
+                {dict.dashboard.admin.descriptions.myForms}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -123,9 +112,9 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
         <TabsContent value="published" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Published Forms</CardTitle>
+              <CardTitle>{dict.dashboard.admin.tabs.published}</CardTitle>
               <CardDescription>
-                View and manage all published forms
+                {dict.dashboard.admin.descriptions.published}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -138,9 +127,9 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
         <TabsContent value="responses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>My Form Responses</CardTitle>
+              <CardTitle>{dict.dashboard.admin.tabs.responses}</CardTitle>
               <CardDescription>
-                View responses for your forms only
+                {dict.dashboard.admin.descriptions.responses}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -150,5 +139,17 @@ export default function AdminDashboard({ userName }: AdminDashboardProps) {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/**
+ * AdminDashboard Component
+ * Wrapper component that provides Suspense boundary
+ */
+export default function AdminDashboard(props: AdminDashboardProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent {...props} />
+    </Suspense>
   );
 } 

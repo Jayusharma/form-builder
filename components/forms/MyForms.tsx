@@ -15,7 +15,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FormActionsMenu } from "./FormActionsMenu";
 import { FilterBar, SortOption } from "./FilterBar";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * MyFormsProps Interface
@@ -128,17 +129,6 @@ interface Form {
 }
 
 /**
- * Sort options configuration
- * Defines available sorting criteria for forms
- */
-const sortOptions = [
-  { value: "newest" as SortOption, label: "Newest First" },
-  { value: "oldest" as SortOption, label: "Oldest First" },
-  { value: "mostSubmissions" as SortOption, label: "Most Submissions" },
-  { value: "leastSubmissions" as SortOption, label: "Least Submissions" },
-];
-
-/**
  * MyForms Component
  * Main component for managing user's forms
  * 
@@ -149,6 +139,7 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
   // Router and toast notification setup
   const router = useRouter();
   const { toast } = useToast();
+  const dict = useDictionary();
 
   // Component state management
   const [forms, setForms] = useState<Form[]>([]);
@@ -156,6 +147,14 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  // Sort options with translations
+  const sortOptions = useMemo(() => [
+    { value: "newest" as SortOption, label: dict.myForms.sort.newest },
+    { value: "oldest" as SortOption, label: dict.myForms.sort.oldest },
+    { value: "mostSubmissions" as SortOption, label: dict.myForms.sort.mostSubmissions },
+    { value: "leastSubmissions" as SortOption, label: dict.myForms.sort.leastSubmissions },
+  ], [dict.myForms.sort]);
 
   /**
    * Handles search query updates
@@ -187,7 +186,7 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
       try {
         const response = await fetch("/api/forms");
         if (!response.ok) {
-          throw new Error("Failed to fetch forms");
+          throw new Error(dict.myForms.loading.error.fetchFailed);
         }
         const data = await response.json();
         
@@ -202,14 +201,14 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
         
         setForms(filteredForms);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setError(err instanceof Error ? err.message : dict.myForms.loading.error.fetchFailed);
       } finally {
         setLoading(false);
       }
     };
 
     fetchForms();
-  }, [userRole]);
+  }, [userRole, dict.myForms.loading.error.fetchFailed]);
 
   /**
    * Handles form reuse
@@ -255,12 +254,18 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
       }
     });
 
+  const getSubmissionsText = (count: number) => {
+    return count === 1 
+      ? dict.myForms.form.submissions.single.replace("{0}", count.toString())
+      : dict.myForms.form.submissions.multiple.replace("{0}", count.toString());
+  };
+
   return (
     <div className="space-y-6">
       {/* Create Form Button */}
       <div className="flex justify-between items-center">
         <Button onClick={() => router.push("/admin/forms/create")}>
-          Create New Form
+          {dict.myForms.actions.createNew}
         </Button>
       </div>
 
@@ -271,7 +276,7 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
         sortBy={sortBy}
         onSortChange={handleSortChange}
         sortOptions={sortOptions}
-        placeholder="Search your forms..."
+        placeholder={dict.myForms.search.placeholder}
       />
 
       {/* Loading State */}
@@ -284,24 +289,24 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
       ) : error ? (
         // Error State
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold text-red-600">Error</h2>
+          <h2 className="text-2xl font-semibold text-red-600">{dict.myForms.loading.error.title}</h2>
           <p className="mt-2 text-gray-600">{error}</p>
         </div>
       ) : filteredAndSortedForms.length === 0 ? (
         // Empty State
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold text-gray-900">No Forms Found</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">{dict.myForms.empty.title}</h2>
           <p className="mt-2 text-gray-600">
             {searchQuery 
-              ? "No forms match your search criteria."
-              : "You haven't created any forms yet."}
+              ? dict.myForms.empty.noResults
+              : dict.myForms.empty.noForms}
           </p>
           {!searchQuery && (
             <Button
               className="mt-4"
               onClick={() => router.push("/admin/forms/create")}
             >
-              Create Your First Form
+              {dict.myForms.actions.createFirst}
             </Button>
           )}
         </div>
@@ -316,12 +321,12 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
                   <div className="space-y-1 flex-1 min-w-0">
                     <CardTitle className="line-clamp-1">{form.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {form.description || "No description"}
+                      {form.description || dict.myForms.form.noDescription}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={form.isPublished ? "default" : "secondary"}>
-                      {form.isPublished ? "Published" : "Not Published"}
+                      {form.isPublished ? dict.myForms.status.published : dict.myForms.status.notPublished}
                     </Badge>
                     <FormActionsMenu form={form} />
                   </div>
@@ -334,12 +339,17 @@ export default function MyForms({ className, userRole }: MyFormsProps) {
                   {/* Last Updated Info */}
                   <div className="flex items-center text-sm text-gray-500">
                     <CalendarDays className="mr-2 h-4 w-4" />
-                    <span>Updated {formatDistanceToNow(new Date(form.updatedAt))} ago</span>
+                    <span>
+                      {dict.myForms.form.lastUpdated.replace(
+                        "{0}",
+                        formatDistanceToNow(new Date(form.updatedAt))
+                      )}
+                    </span>
                   </div>
                   {/* Submission Count */}
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-sm text-gray-500">
-                      {form._count.submissions} submission{form._count.submissions !== 1 ? 's' : ''}
+                      {getSubmissionsText(form._count.submissions)}
                     </div>
                   </div>
                 </div>

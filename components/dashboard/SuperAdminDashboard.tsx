@@ -21,14 +21,15 @@
 
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import PublishedFormsList from "@/components/forms/PublishedFormsList";
 import PublicRequest from "@/components/forms/publicRequest";
 import FormResponses from "@/components/forms/FormResponses";
 import MyForms from "@/components/forms/MyForms";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * SuperAdminDashboardProps Interface
@@ -49,23 +50,13 @@ interface SuperAdminDashboardProps {
 const VALID_TABS = ["my-forms", "published", "requests", "responses", "system"] as const;
 type TabValue = typeof VALID_TABS[number];
 
-/**
- * SuperAdminDashboard Component
- * Renders the super admin dashboard interface with tabbed navigation
- * 
- * @param {SuperAdminDashboardProps} props - Component props
- * @returns {JSX.Element} Rendered super admin dashboard interface
- */
-export default function SuperAdminDashboard({ userName }: SuperAdminDashboardProps) {
-  // Router and search params setup
+function DashboardContent({ userName }: SuperAdminDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
   const currentTab = searchParams.get("tab") as TabValue;
+  const dict = useDictionary();
 
-  /**
-   * Validates and sets default tab if needed
-   * Ensures a valid tab is always selected
-   */
   useEffect(() => {
     if (!currentTab || !VALID_TABS.includes(currentTab)) {
       const params = new URLSearchParams(searchParams.toString());
@@ -74,12 +65,6 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
     }
   }, [currentTab, router, searchParams]);
 
-  /**
-   * Handles tab changes
-   * Updates URL with selected tab
-   * 
-   * @param {string} value - New tab value
-   */
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", value);
@@ -90,9 +75,9 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
     <div className="container mx-auto py-8">
       {/* Dashboard Header */}
       <div className="flex flex-col items-center text-center mb-8">
-        <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold">{dict.dashboard.superAdmin.title}</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, Super Admin {userName}
+          {dict.dashboard.superAdmin.welcomeBack.replace("{0}", userName)}
         </p>
       </div>
 
@@ -104,19 +89,19 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
       >
         {/* Tab Triggers */}
         <TabsList className="md:flex-row flex-col w-full justify-center">
-          <TabsTrigger value="my-forms">My Forms</TabsTrigger>
-          <TabsTrigger value="published">Published Forms</TabsTrigger>
-          <TabsTrigger value="requests">Form Requests</TabsTrigger>
-          <TabsTrigger value="responses">All Responses</TabsTrigger>
+          <TabsTrigger value="my-forms">{dict.dashboard.superAdmin.tabs.myForms}</TabsTrigger>
+          <TabsTrigger value="published">{dict.dashboard.superAdmin.tabs.published}</TabsTrigger>
+          <TabsTrigger value="requests">{dict.dashboard.superAdmin.tabs.requests}</TabsTrigger>
+          <TabsTrigger value="responses">{dict.dashboard.superAdmin.tabs.responses}</TabsTrigger>
         </TabsList>
 
         {/* My Forms Tab Content */}
         <TabsContent value="my-forms" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>My Forms</CardTitle>
+              <CardTitle>{dict.dashboard.superAdmin.tabs.myForms}</CardTitle>
               <CardDescription>
-                Create and manage your forms
+                {dict.dashboard.superAdmin.descriptions.myForms}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -129,9 +114,9 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
         <TabsContent value="published" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Published Forms</CardTitle>
+              <CardTitle>{dict.dashboard.superAdmin.tabs.published}</CardTitle>
               <CardDescription>
-                View and manage all published forms
+                {dict.dashboard.superAdmin.descriptions.published}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -144,9 +129,9 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
         <TabsContent value="requests" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Form Publication Requests</CardTitle>
+              <CardTitle>{dict.dashboard.superAdmin.tabs.requests}</CardTitle>
               <CardDescription>
-                Review and manage all form publication requests
+                {dict.dashboard.superAdmin.descriptions.requests}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -159,9 +144,9 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
         <TabsContent value="responses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>All Form Responses</CardTitle>
+              <CardTitle>{dict.dashboard.superAdmin.tabs.responses}</CardTitle>
               <CardDescription>
-                View and manage responses for all forms
+                {dict.dashboard.superAdmin.descriptions.responses}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -171,5 +156,13 @@ export default function SuperAdminDashboard({ userName }: SuperAdminDashboardPro
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function SuperAdminDashboard(props: SuperAdminDashboardProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent {...props} />
+    </Suspense>
   );
 } 

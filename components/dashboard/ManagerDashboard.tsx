@@ -25,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import PublishedFormsList from "@/components/forms/PublishedFormsList";
 import FormResponses from "@/components/forms/FormResponses";
 import MyForms from "@/components/forms/MyForms";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * ManagerDashboardProps Interface
@@ -57,6 +58,7 @@ export default function ManagerDashboard({ userName }: ManagerDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") as TabValue;
+  const dict = useDictionary();
 
   /**
    * Validates and sets default tab if needed
@@ -86,9 +88,9 @@ export default function ManagerDashboard({ userName }: ManagerDashboardProps) {
     <div className="container mx-auto py-8">
       {/* Dashboard Header */}
       <div className="flex flex-col items-center text-center mb-8">
-        <h1 className="text-3xl font-bold">Manager Dashboard</h1>
+        <h1 className="text-3xl font-bold">{dict.dashboard.manager.title}</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, Manager {userName}
+          {dict.dashboard.manager.welcomeBack.replace("{0}", userName)}
         </p>
       </div>
 
@@ -101,18 +103,18 @@ export default function ManagerDashboard({ userName }: ManagerDashboardProps) {
         {/* Tab Triggers */}
         <TabsList className="md:flex-row flex-col w-full justify-center">
           {/* My Forms tab is currently disabled */}
-          {/* <TabsTrigger value="my-forms">My Forms</TabsTrigger> */}
-          <TabsTrigger value="published">Published Forms</TabsTrigger>
-          <TabsTrigger value="responses">Form Responses</TabsTrigger>
+          {/* <TabsTrigger value="my-forms">{dict.dashboard.manager.tabs.myForms}</TabsTrigger> */}
+          <TabsTrigger value="published">{dict.dashboard.manager.tabs.published}</TabsTrigger>
+          <TabsTrigger value="responses">{dict.dashboard.manager.tabs.responses}</TabsTrigger>
         </TabsList>
 
         {/* My Forms Tab Content (currently disabled) */}
         {/* <TabsContent value="my-forms" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>My Forms</CardTitle>
+              <CardTitle>{dict.dashboard.manager.tabs.myForms}</CardTitle>
               <CardDescription>
-                Create and manage your forms
+                {dict.dashboard.manager.descriptions.myForms}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -125,9 +127,9 @@ export default function ManagerDashboard({ userName }: ManagerDashboardProps) {
         <TabsContent value="published" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Published Forms</CardTitle>
+              <CardTitle>{dict.dashboard.manager.tabs.published}</CardTitle>
               <CardDescription>
-                View and manage your published forms
+                {dict.dashboard.manager.descriptions.published}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -140,9 +142,9 @@ export default function ManagerDashboard({ userName }: ManagerDashboardProps) {
         <TabsContent value="responses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Form Responses</CardTitle>
+              <CardTitle>{dict.dashboard.manager.tabs.responses}</CardTitle>
               <CardDescription>
-                View responses for your forms only
+                {dict.dashboard.manager.descriptions.responses}
               </CardDescription>
             </CardHeader>
             <CardContent>

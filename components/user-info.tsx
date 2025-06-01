@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { UserRole } from "@prisma/client";
+import { useDictionary } from "@/hooks/useDictionary";
 
 interface ExtendedUser extends User {
   role: UserRole;
@@ -23,6 +24,7 @@ interface UserInfoProps {
 
 export default function UserInfo({ user, label }: UserInfoProps) {
   const [copied, setCopied] = useState(false);
+  const dict = useDictionary();
 
   if (!user) {
     return null;
@@ -32,10 +34,10 @@ export default function UserInfo({ user, label }: UserInfoProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success("Admin code copied to clipboard!");
+      toast.success(dict.userInfo.notifications.adminCode.copySuccess);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      toast.error("Failed to copy admin code");
+      toast.error(dict.userInfo.notifications.adminCode.copyError);
     }
   };
 
@@ -46,38 +48,38 @@ export default function UserInfo({ user, label }: UserInfoProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-          <p className="text-sm font-medium">ID</p>
+          <p className="text-sm font-medium">{dict.userInfo.fields.id}</p>
           <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
             {user.id}
           </p>
         </div>
         <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-          <p className="text-sm font-medium">Name</p>
+          <p className="text-sm font-medium">{dict.userInfo.fields.name}</p>
           <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
-            {user.name || "Not set"}
+            {user.name || dict.userInfo.values.notSet}
           </p>
         </div>
         <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-          <p className="text-sm font-medium">Email</p>
+          <p className="text-sm font-medium">{dict.userInfo.fields.email}</p>
           <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
-            {user.email || "Not set"}
+            {user.email || dict.userInfo.values.notSet}
           </p>
         </div>
         <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-          <p className="text-sm font-medium">Role</p>
+          <p className="text-sm font-medium">{dict.userInfo.fields.role}</p>
           <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md capitalize">
-            {user.role?.toLowerCase() || "Not set"}
+            {user.role?.toLowerCase() || dict.userInfo.values.notSet}
           </p>
         </div>
         <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-          <p className="text-sm font-medium">2FA</p>
+          <p className="text-sm font-medium">{dict.userInfo.fields.twoFactor}</p>
           <Badge variant={user.isTwoFactorEnabled ? "default" : "destructive"}>
-            {user.isTwoFactorEnabled ? "ON" : "OFF"}
+            {user.isTwoFactorEnabled ? dict.userInfo.values.twoFactor.on : dict.userInfo.values.twoFactor.off}
           </Badge>
         </div>
         {user.role === "ADMIN" && user.adminCode && (
           <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-            <p className="text-sm font-medium">Admin Code</p>
+            <p className="text-sm font-medium">{dict.userInfo.fields.adminCode}</p>
             <div className="flex items-center gap-2">
               <code className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md bg-muted">
                 {user.adminCode}

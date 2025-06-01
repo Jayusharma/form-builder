@@ -18,10 +18,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { useDictionary } from "@/hooks/useDictionary";
 
 export default function ConnectToAdmin() {
   const router = useRouter();
   const { toast } = useToast();
+  const dict = useDictionary();
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,21 +45,22 @@ export default function ConnectToAdmin() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to connect to admin");
+        throw new Error(data.message || dict.dashboard.connectToAdmin.error.failedToConnect);
       }
 
       toast({
-        title: "Success!",
-        description: "You have been connected to the organization",
+        title: dict.dashboard.connectToAdmin.success.title,
+        description: dict.dashboard.connectToAdmin.success.description,
       });
 
       // Refresh the page to update the session and show dashboard
       router.refresh();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An unexpected error occurred");
+      const errorMessage = error instanceof Error ? error.message : dict.dashboard.connectToAdmin.error.defaultMessage;
+      setError(errorMessage);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to connect to admin",
+        title: dict.dashboard.connectToAdmin.error.title,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -69,9 +72,9 @@ export default function ConnectToAdmin() {
     <div className="container max-w-md mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Connect to Organization</CardTitle>
+          <CardTitle>{dict.dashboard.connectToAdmin.title}</CardTitle>
           <CardDescription>
-            Enter your organization's admin code to get started
+            {dict.dashboard.connectToAdmin.description}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -79,7 +82,7 @@ export default function ConnectToAdmin() {
             <div className="space-y-2">
               <Input
                 type="text"
-                placeholder="Enter admin code"
+                placeholder={dict.dashboard.connectToAdmin.placeholder}
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 className="font-mono text-center tracking-wider"
@@ -98,10 +101,10 @@ export default function ConnectToAdmin() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
+                  {dict.dashboard.connectToAdmin.connecting}
                 </>
               ) : (
-                "Connect"
+                dict.dashboard.connectToAdmin.connect
               )}
             </Button>
           </form>

@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormSubmission } from "@/lib/schemas/form";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * ExtendedForm Interface
@@ -61,6 +62,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const dict = useDictionary();
 
   // Component state management
   const [forms, setForms] = useState<ExtendedForm[]>([]);
@@ -74,7 +76,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
   const updateUrlWithoutFormId = () => {
     const tab = searchParams.get('tab');
     const newUrl = tab ? `${pathname}?tab=${tab}` : pathname;
-    router.push(newUrl, { scroll: false });
+    router.push(newUrl as `/${string}`, { scroll: false });
   };
 
   /**
@@ -168,7 +170,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <p>Loading forms...</p>
+        <p>{dict.formResponses.loading}</p>
       </div>
     );
   }
@@ -179,14 +181,20 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
       <div className="text-center py-8">
         <p className="text-muted-foreground">
           {userRole === "ADMIN" 
-            ? "You haven't created any forms yet."
+            ? dict.formResponses.noForms.admin
             : userRole === "MANAGER" || userRole === "SADMIN"
-              ? "No forms available in the system."
-              : "No forms available."}
+              ? dict.formResponses.noForms.manager
+              : dict.formResponses.noForms.default}
         </p>
       </div>
     );
   }
+
+  const getResponsesText = (count: number) => {
+    return count === 1 
+      ? dict.formResponses.select.responses.replace("{0}", count.toString())
+      : dict.formResponses.select.responses_plural.replace("{0}", count.toString());
+  };
 
   return (
     <div className="space-y-6">
@@ -197,7 +205,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
           onValueChange={handleFormSelect}
         >
           <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder="Select a form" />
+            <SelectValue placeholder={dict.formResponses.select.placeholder} />
           </SelectTrigger>
           <SelectContent className="max-h-[300px] overflow-y-auto">
             <ScrollArea className="h-full">
@@ -211,7 +219,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
                     <span className="block truncate max-w-[200px]">{form.title}</span>
                   </div>
                   <Badge variant="secondary" className="shrink-0 ml-2">
-                    {form.submissions.length} response{form.submissions.length !== 1 ? 's' : ''}
+                    {getResponsesText(form.submissions.length)}
                   </Badge>
                 </SelectItem>
               ))}
@@ -226,9 +234,11 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
           <div className="space-y-6">
             {/* Response Header */}
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Responses for "{selectedForm.title}"</h2>
+              <h2 className="text-2xl font-semibold">
+                {dict.formResponses.responses.title.replace("{0}", selectedForm.title)}
+              </h2>
               <Badge variant="outline">
-                {selectedForm.submissions.length} response{selectedForm.submissions.length !== 1 ? 's' : ''}
+                {getResponsesText(selectedForm.submissions.length)}
               </Badge>
             </div>
 
@@ -239,16 +249,22 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
                   <Card 
                     key={submission.id}
                     className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => router.push(`/admin/responses/${submission.id}`)}
+                    onClick={() => router.push(`/admin/responses/${submission.id}` as `/${string}`)}
                   >
                     {/* Submission Header */}
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">
-                          Response #{selectedForm.submissions.length - index}
+                          {dict.formResponses.responses.responseNumber.replace(
+                            "{0}",
+                            (selectedForm.submissions.length - index).toString()
+                          )}
                         </CardTitle>
                         <div className="text-sm text-gray-500">
-                          {formatDistanceToNow(new Date(submission.createdAt))} ago
+                          {dict.formResponses.responses.timeAgo.replace(
+                            "{0}",
+                            formatDistanceToNow(new Date(submission.createdAt))
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -275,7 +291,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
         ) : (
           // No responses state
           <div className="text-center py-8">
-            <p className="text-muted-foreground">No responses yet for this form.</p>
+            <p className="text-muted-foreground">{dict.formResponses.responses.noResponses}</p>
           </div>
         )
       ) : null}

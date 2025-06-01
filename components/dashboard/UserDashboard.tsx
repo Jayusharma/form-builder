@@ -17,12 +17,14 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MySubmissions from "./MySubmissions";
 import AdminForms from "./AdminForms";
+import { useDictionary } from "@/hooks/useDictionary";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /**
  * UserDashboardProps Interface
@@ -41,16 +43,31 @@ interface AdminInfo {
 }
 
 /**
- * UserDashboard Component
- * Renders a simplified dashboard interface for regular users
- * 
- * @param {UserDashboardProps} props - Component props
- * @returns {JSX.Element} Rendered user dashboard interface
+ * Valid tab values for the dashboard navigation
  */
-export default function UserDashboard({ userName }: UserDashboardProps) {
+const VALID_TABS = ["forms", "submissions"] as const;
+type TabValue = typeof VALID_TABS[number];
+
+/**
+ * DashboardContent Component
+ * Internal component that renders the dashboard content
+ */
+function DashboardContent({ userName }: UserDashboardProps) {
   const { data: session } = useSession();
-  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [adminInfo, setAdminInfo] = React.useState<AdminInfo | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const dict = useDictionary();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") as TabValue;
+
+  useEffect(() => {
+    if (!currentTab || !VALID_TABS.includes(currentTab)) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", "forms");
+      router.replace(`?${params.toString()}`);
+    }
+  }, [currentTab, router, searchParams]);
 
   useEffect(() => {
     const fetchAdminInfo = async () => {
@@ -71,41 +88,58 @@ export default function UserDashboard({ userName }: UserDashboardProps) {
     }
   }, [session]);
 
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.push(`?${params.toString()}`);
+  };
+
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto py-8">
       {/* Dashboard Header */}
-      <h1 className="text-3xl text-center font-bold mb-6">User Dashboard</h1>
+      <div className="flex flex-col items-center text-center mb-8">
+        <h1 className="text-3xl font-bold">{dict.dashboard.user.title}</h1>
+        <p className="text-muted-foreground mt-1">
+          {dict.dashboard.user.welcomeBack.replace("{0}", userName)}
+        </p>
+      </div>
 
       {/* Organization Info Card */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Organization</CardTitle>
+          <CardTitle>{dict.dashboard.user.organization.title}</CardTitle>
+          <CardDescription>{dict.dashboard.user.organization.description}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-muted-foreground">Loading organization info...</p>
+            <p className="text-muted-foreground">{dict.dashboard.user.organization.loading}</p>
           ) : adminInfo ? (
             <div className="space-y-2">
-              <p className="font-medium">{adminInfo.name || "Unnamed Admin"}</p>
+              <p className="font-medium">{adminInfo.name || dict.dashboard.user.organization.unnamedAdmin}</p>
               <p className="text-sm text-muted-foreground">{adminInfo.email}</p>
             </div>
           ) : (
-            <p className="text-destructive">Failed to load organization info</p>
+            <p className="text-destructive">{dict.dashboard.user.organization.error}</p>
           )}
         </CardContent>
       </Card>
 
       {/* Tabs for Forms and Submissions */}
-      <Tabs defaultValue="forms" className="space-y-4">
+      <Tabs 
+        value={currentTab || "forms"} 
+        onValueChange={handleTabChange}
+        className="space-y-4"
+      >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="forms">Available Forms</TabsTrigger>
-          <TabsTrigger value="submissions">My Submissions</TabsTrigger>
+          <TabsTrigger value="forms">{dict.dashboard.user.tabs.forms}</TabsTrigger>
+          <TabsTrigger value="submissions">{dict.dashboard.user.tabs.submissions}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="forms" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Forms from Your Organization</CardTitle>
+              <CardTitle>{dict.dashboard.user.tabs.forms}</CardTitle>
+              <CardDescription>{dict.dashboard.user.descriptions.forms}</CardDescription>
             </CardHeader>
             <CardContent>
               <AdminForms />
@@ -116,7 +150,8 @@ export default function UserDashboard({ userName }: UserDashboardProps) {
         <TabsContent value="submissions" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>My Submissions</CardTitle>
+              <CardTitle>{dict.dashboard.user.tabs.submissions}</CardTitle>
+              <CardDescription>{dict.dashboard.user.descriptions.submissions}</CardDescription>
             </CardHeader>
             <CardContent>
               <MySubmissions />
@@ -125,5 +160,17 @@ export default function UserDashboard({ userName }: UserDashboardProps) {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/**
+ * UserDashboard Component
+ * Wrapper component that provides Suspense boundary
+ */
+export default function UserDashboard(props: UserDashboardProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent {...props} />
+    </Suspense>
   );
 }

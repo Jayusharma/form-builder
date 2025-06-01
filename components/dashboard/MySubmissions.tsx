@@ -8,11 +8,12 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { FilterBar, SortOption } from "@/components/forms/FilterBar";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * Submission Interface
@@ -38,11 +39,6 @@ interface Submission {
   responses: Record<string, any>;
 }
 
-const sortOptions = [
-  { value: "newest" as SortOption, label: "Newest First" },
-  { value: "oldest" as SortOption, label: "Oldest First" },
-];
-
 /**
  * MySubmissions Component
  * Renders a grid of form submissions with interactive cards
@@ -51,21 +47,28 @@ const sortOptions = [
  */
 export default function MySubmissions() {
   const router = useRouter();
+  const { locale } = useParams();
+  const dict = useDictionary();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
+  const sortOptions = [
+    { value: "newest" as SortOption, label: dict.dashboard.mySubmissions.sort.newest },
+    { value: "oldest" as SortOption, label: dict.dashboard.mySubmissions.sort.oldest },
+  ];
+
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         const response = await fetch("/api/users/submissions");
-        if (!response.ok) throw new Error("Failed to fetch submissions");
+        if (!response.ok) throw new Error(dict.dashboard.mySubmissions.error.fetchFailed);
         const data = await response.json();
         setSubmissions(data.submissions);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to load submissions");
+        setError(error instanceof Error ? error.message : dict.dashboard.mySubmissions.error.loadFailed);
         console.error("Failed to fetch submissions:", error);
       } finally {
         setIsLoading(false);
@@ -73,7 +76,7 @@ export default function MySubmissions() {
     };
 
     fetchSubmissions();
-  }, []);
+  }, [dict.dashboard.mySubmissions.error]);
 
   // Filter and sort submissions
   const filteredSubmissions = useMemo(() => {
@@ -121,7 +124,7 @@ export default function MySubmissions() {
   if (submissions.length === 0) {
     return (
       <div className="text-center text-muted-foreground p-4">
-        <p>You haven't submitted any forms yet.</p>
+        <p>{dict.dashboard.mySubmissions.noSubmissions}</p>
       </div>
     );
   }
@@ -134,12 +137,12 @@ export default function MySubmissions() {
         sortBy={sortBy}
         onSortChange={setSortBy}
         sortOptions={sortOptions}
-        placeholder="Search submissions..."
+        placeholder={dict.dashboard.mySubmissions.search.placeholder}
       />
 
       {filteredSubmissions.length === 0 ? (
         <div className="text-center text-muted-foreground p-4">
-          <p>No submissions match your search criteria.</p>
+          <p>{dict.dashboard.mySubmissions.noResults}</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -156,13 +159,16 @@ export default function MySubmissions() {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-muted-foreground">
-                    Submitted {new Date(submission.createdAt).toLocaleDateString()}
+                    {dict.dashboard.mySubmissions.submission.submittedOn.replace(
+                      "{0}",
+                      new Date(submission.createdAt).toLocaleDateString()
+                    )}
                   </p>
                   <Button
-                    onClick={() => router.push(`/submissions/${submission.id}`)}
+                    onClick={() => router.push(`/${locale}/submissions/${submission.id}` as `/${string}${string}`)}
                     variant="outline"
                   >
-                    View Submission
+                    {dict.dashboard.mySubmissions.submission.viewButton}
                   </Button>
                 </div>
               </CardContent>

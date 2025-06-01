@@ -14,7 +14,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/use-toast";
 import { FormActionsMenu } from "./FormActionsMenu";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * Form Interface
@@ -96,17 +97,6 @@ interface Form {
 }
 
 /**
- * Sort options configuration
- * Defines available sorting criteria for published forms
- */
-const sortOptions = [
-  { value: "newest" as SortOption, label: "Newest First" },
-  { value: "oldest" as SortOption, label: "Oldest First" },
-  { value: "mostSubmissions" as SortOption, label: "Most Submissions" },
-  { value: "leastSubmissions" as SortOption, label: "Least Submissions" },
-];
-
-/**
  * PublishedFormsList Component
  * Main component for displaying published forms
  * 
@@ -115,6 +105,7 @@ const sortOptions = [
 export default function PublishedFormsList() {
   // Router setup
   const router = useRouter();
+  const dict = useDictionary();
 
   // Component state management
   const [forms, setForms] = useState<Form[]>([]);
@@ -122,6 +113,14 @@ export default function PublishedFormsList() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  // Sort options with translations
+  const sortOptions = useMemo(() => [
+    { value: "newest" as SortOption, label: dict.publishedForms.sort.newest },
+    { value: "oldest" as SortOption, label: dict.publishedForms.sort.oldest },
+    { value: "mostSubmissions" as SortOption, label: dict.publishedForms.sort.mostSubmissions },
+    { value: "leastSubmissions" as SortOption, label: dict.publishedForms.sort.leastSubmissions },
+  ], [dict.publishedForms.sort]);
 
   /**
    * Handles search query updates
@@ -152,19 +151,19 @@ export default function PublishedFormsList() {
       try {
         const response = await fetch('/api/forms/published');
         if (!response.ok) {
-          throw new Error('Failed to fetch published forms');
+          throw new Error(dict.publishedForms.loading.error.fetchFailed);
         }
         const data = await response.json();
         setForms(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : dict.publishedForms.loading.error.defaultError);
       } finally {
         setLoading(false);
       }
     };
 
     fetchForms();
-  }, []);
+  }, [dict.publishedForms.loading.error]);
 
   /**
    * Filters and sorts forms based on search query and sort option
@@ -222,6 +221,12 @@ export default function PublishedFormsList() {
     setForms(forms.filter(form => form.id !== updatedForm.id));
   };
 
+  const getSubmissionsText = (count: number) => {
+    return count === 1 
+      ? dict.publishedForms.form.submissions.single.replace("{0}", count.toString())
+      : dict.publishedForms.form.submissions.multiple.replace("{0}", count.toString());
+  };
+
   return (
     <div className="space-y-6">
       {/* Search and Filter Bar */}
@@ -231,7 +236,7 @@ export default function PublishedFormsList() {
         sortBy={sortBy}
         onSortChange={handleSortChange}
         sortOptions={sortOptions}
-        placeholder="Search forms..."
+        placeholder={dict.publishedForms.search.placeholder}
       />
       
       {/* Loading State */}
@@ -246,17 +251,17 @@ export default function PublishedFormsList() {
       ) : error ? (
         // Error State
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold text-red-600">Error</h2>
+          <h2 className="text-2xl font-semibold text-red-600">{dict.publishedForms.loading.error.title}</h2>
           <p className="mt-2 text-gray-600">{error}</p>
         </div>
       ) : filteredAndSortedForms.length === 0 ? (
         // Empty State
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold text-gray-900">No Forms Found</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">{dict.publishedForms.empty.title}</h2>
           <p className="mt-2 text-gray-600">
             {searchQuery 
-              ? "No forms match your search criteria."
-              : "There are no published forms available at the moment."}
+              ? dict.publishedForms.empty.noResults
+              : dict.publishedForms.empty.noForms}
           </p>
         </div>
       ) : (
@@ -270,7 +275,7 @@ export default function PublishedFormsList() {
                   <div className="space-y-1 flex-1 min-w-0">
                     <CardTitle className="line-clamp-1">{form.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {form.description || "No description provided"}
+                      {form.description || dict.publishedForms.form.noDescription}
                     </CardDescription>
                   </div>
                   {/* Form Actions Menu */}
@@ -286,17 +291,22 @@ export default function PublishedFormsList() {
                   {/* Creator Info */}
                   <div className="flex items-center text-sm text-gray-500">
                     <User className="mr-2 h-4 w-4" />
-                    <span>{form.user.name || form.user.email}</span>
+                    <span>{dict.publishedForms.form.creator.title} {form.user.name || form.user.email}</span>
                   </div>
                   {/* Last Updated Info */}
                   <div className="flex items-center text-sm text-gray-500">
                     <CalendarDays className="mr-2 h-4 w-4" />
-                    <span>Updated {formatDistanceToNow(new Date(form.updatedAt))} ago</span>
+                    <span>
+                      {dict.publishedForms.form.lastUpdated.replace(
+                        "{0}",
+                        formatDistanceToNow(new Date(form.updatedAt))
+                      )}
+                    </span>
                   </div>
                   {/* Submission Count */}
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-sm text-gray-500">
-                      {form._count.submissions} submission{form._count.submissions !== 1 ? 's' : ''}
+                      {getSubmissionsText(form._count.submissions)}
                     </div>
                   </div>
                 </div>

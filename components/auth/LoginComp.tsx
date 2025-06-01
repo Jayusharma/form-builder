@@ -15,8 +15,8 @@
 "use client";
 import type React from "react";
 import { useTransition } from "react";
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useSearchParams, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -37,6 +37,8 @@ import { login } from "@/actions/login";
 import { Social } from "@/components/auth/social";
 import { BackButton } from "./BackButton";
 import Link from "next/link";
+import { getClientDictionary } from "@/lib/client-dictionary";
+import { Locale } from "@/app/i18n.config";
 
 /**
  * LoginComp Component
@@ -67,11 +69,12 @@ function LoginComp() {
     },
   });
 
-  // Get callback URL and OAuth errors from search params
-  const SearchParams = useSearchParams();
-  const callbackUrl = SearchParams.get("callbackUrl");
+  // Get callback URL, locale and OAuth errors from search params
+  const searchParams = useSearchParams();
+  const { locale } = useParams();
+  const callbackUrl = searchParams.get("callbackUrl");
   const UrlError =
-    SearchParams.get("error") === "OAuthAccountNotLinked"
+    searchParams.get("error") === "OAuthAccountNotLinked"
       ? "Email already in use with different provider!"
       : "";
 
@@ -80,6 +83,14 @@ function LoginComp() {
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
   const [showTwoFactor, setShowTwoFactor] = useState(false);
+  const [dict, setDict] = useState<any>(null);
+
+  // Load dictionary
+  useEffect(() => {
+    getClientDictionary(locale as Locale).then((d) => setDict(d));
+  }, [locale]);
+
+  if (!dict) return null;
 
   /**
    * Handles form submission and authentication
@@ -97,8 +108,16 @@ function LoginComp() {
     setError("");
     setSuccess("");
     startTransition(() => {
-      login(values, callbackUrl)
-      .then((data) => { 
+      // Ensure callback URL has locale if it's a relative URL
+      let finalCallbackUrl = callbackUrl;
+      if (finalCallbackUrl && !finalCallbackUrl.startsWith('http') && !finalCallbackUrl.startsWith('/api')) {
+        if (!finalCallbackUrl.startsWith(`/${locale}`)) {
+          finalCallbackUrl = `/${locale}${finalCallbackUrl.startsWith('/') ? '' : '/'}${finalCallbackUrl}`;
+        }
+      }
+
+      login(values, finalCallbackUrl)
+        .then((data) => {
           if (data?.success) {
             form.reset();
             setSuccess(data.success);
@@ -110,9 +129,7 @@ function LoginComp() {
           if (data?.twoFactor) {
             setShowTwoFactor(true);
           }
-        })
-        //fix todo
-        // .catch(() => setError("something went wrong"));
+        });
     });
   };
 
@@ -121,30 +138,27 @@ function LoginComp() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back
+            {dict.auth.login.title}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your credentials to sign in to your account
+            {dict.auth.login.description}
           </p>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="spce-y-6">
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-
-                {showTwoFactor&&(
-                  <FormField
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              {showTwoFactor && (
+                <FormField
                   control={form.control}
                   name="code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Two Factor Code</FormLabel>
+                      <FormLabel>{dict.auth.login.twoFactorLabel}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="123456"
-                        
+                          placeholder={dict.auth.login.twoFactorPlaceholder}
                           disabled={isPending}
                         />
                       </FormControl>
@@ -152,64 +166,63 @@ function LoginComp() {
                     </FormItem>
                   )}
                 />
+              )}
+              {!showTwoFactor && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{dict.auth.login.emailLabel}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={dict.auth.login.emailPlaceholder}
+                            type="email"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                )}
-                {!showTwoFactor &&(
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="example@gmail.com"
-                              type="email"
-                              disabled={isPending}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="******"
-                              type="Password"
-                              disabled={isPending}
-                            />
-                          </FormControl>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            asChild
-                            className="  flex font-normal px-0 justify-baseline "
-                          >
-                            <Link href="/auth/reset">Forgot Password ?</Link>
-                          </Button>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
-              </div>
-              <FormSuccess message={success} />
-              <FormError message={error || UrlError} />
-              <Button type="submit" className="w-full">
-                {showTwoFactor?"Confirm":"Login"}
-              </Button>
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{dict.auth.login.passwordLabel}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={dict.auth.login.passwordPlaceholder}
+                            type="password"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          asChild
+                          className="flex font-normal px-0 justify-baseline"
+                        >
+                          <Link href={`/${locale}/auth/reset`}>{dict.auth.login.forgotPassword}</Link>
+                        </Button>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </div>
+
+            <FormError message={error || (UrlError && dict.auth.login.oauthError)} />
+            <FormSuccess message={success} />
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {showTwoFactor ? dict.auth.login.confirmButton : dict.auth.login.submitButton}
+            </Button>
           </form>
         </Form>
 
@@ -219,14 +232,14 @@ function LoginComp() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+              {dict.auth.login.orContinueWith}
             </span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Social />
         </div>
-        <BackButton href="/auth/register" label="Don't have an account?" />
+        <BackButton href={`/${locale}/auth/register`} label={dict.auth.login.noAccount} />
       </div>
     </div>
   );

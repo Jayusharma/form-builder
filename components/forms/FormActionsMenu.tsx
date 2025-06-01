@@ -30,6 +30,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
 import { useSession } from "next-auth/react";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * Form Interface
@@ -122,6 +123,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
   // Router and session setup
   const router = useRouter();
   const { data: session } = useSession();
+  const dict = useDictionary();
   
   // Permission checks
   const isOwner = session?.user?.id === form.userId;
@@ -156,7 +158,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to make form private');
+        throw new Error(data.error || dict.formActions.notifications.makePrivate.error.description);
       }
 
       const updatedForm = await response.json();
@@ -166,8 +168,8 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
       }
 
       toast({
-        title: "Form made private",
-        description: "The form has been successfully made private.",
+        title: dict.formActions.notifications.makePrivate.success.title,
+        description: dict.formActions.notifications.makePrivate.success.description,
       });
 
       if (window.location.pathname.includes('/published')) {
@@ -175,8 +177,8 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to make form private",
+        title: dict.formActions.notifications.makePrivate.error.title,
+        description: error instanceof Error ? error.message : dict.formActions.notifications.makePrivate.error.description,
         variant: "destructive",
       });
     }
@@ -201,12 +203,12 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to request form publication');
+        throw new Error(data.error || dict.formActions.notifications.requestPublic.error.description);
       }
 
       toast({
-        title: "Request submitted",
-        description: "Your request to make the form public has been submitted.",
+        title: dict.formActions.notifications.requestPublic.success.title,
+        description: dict.formActions.notifications.requestPublic.success.description,
       });
 
       if (onFormUpdate) {
@@ -215,8 +217,8 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit request",
+        title: dict.formActions.notifications.requestPublic.error.title,
+        description: error instanceof Error ? error.message : dict.formActions.notifications.requestPublic.error.description,
         variant: "destructive",
       });
     }
@@ -245,7 +247,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
                 onClick={handleRequestPublic}
               >
                 <Globe className="h-4 w-4 mr-2" />
-                Request Public
+                {dict.formActions.menuItems.requestPublic}
               </Button>
             </DropdownMenuItem>
           )}
@@ -254,7 +256,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
           {hasPendingRequest && (
             <DropdownMenuItem disabled className="text-muted-foreground">
               <Globe className="h-4 w-4 mr-2" />
-              Public Request Pending
+              {dict.formActions.menuItems.publicRequestPending}
             </DropdownMenuItem>
           )}
 
@@ -266,7 +268,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
               onClick={() => handleReuseForm(form)}
             >
               <Recycle className="h-4 w-4 mr-2" />
-              Reuse
+              {dict.formActions.menuItems.reuseForm}
             </Button>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -290,9 +292,9 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
             className="w-full justify-start cursor-pointer"
             asChild
           >
-            <Link href={`/forms/${form.id}`}>
+            <Link href={`/forms/${form.id}` as `/${string}`}>
               <Eye className="h-4 w-4 mr-2" />
-              View Form
+              {dict.formActions.menuItems.viewForm}
             </Link>
           </Button>
         </DropdownMenuItem>
@@ -305,7 +307,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
             onClick={handleViewSubmissions}
           >
             <ListFilter className="h-4 w-4 mr-2" />
-            View Submissions ({form._count.submissions})
+            {dict.formActions.menuItems.viewSubmissions.replace("{0}", form._count.submissions.toString())}
           </Button>
         </DropdownMenuItem>
 
@@ -316,8 +318,8 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
             className="w-full justify-start cursor-pointer"
             onClick={() => {
               const shareData = {
-                title: `Share ${form.title}`,
-                text: `Check out this form: ${form.title}`,
+                title: dict.formActions.share.title.replace("{0}", form.title),
+                text: dict.formActions.share.text.replace("{0}", form.title),
                 url: `${window.location.origin}/forms/${form.id}`
               };
               
@@ -327,8 +329,8 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
                 navigator.clipboard.writeText(shareData.url)
                   .then(() => {
                     toast({
-                      title: "Link copied!",
-                      description: "Link has been copied to clipboard.",
+                      title: dict.formActions.share.copied.title,
+                      description: dict.formActions.share.copied.description,
                     });
                   })
                   .catch(console.error);
@@ -336,7 +338,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
             }}
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Share Form
+            {dict.formActions.menuItems.shareForm}
           </Button>
         </DropdownMenuItem>
 
@@ -349,7 +351,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
               onClick={() => handleReuseForm(form)}
             >
               <Recycle className="h-4 w-4 mr-2" />
-              Reuse
+              {dict.formActions.menuItems.reuseForm}
             </Button>
           </DropdownMenuItem>
         )}
@@ -363,7 +365,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
               onClick={handleMakePrivate}
             >
               <Lock className="h-4 w-4 mr-2" />
-              Make Private
+              {dict.formActions.menuItems.makePrivate}
             </Button>
           </DropdownMenuItem>
         )}
@@ -377,7 +379,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
               onClick={handleRequestPublic}
             >
               <Globe className="h-4 w-4 mr-2" />
-              Request Public
+              {dict.formActions.menuItems.requestPublic}
             </Button>
           </DropdownMenuItem>
         )}
@@ -386,7 +388,7 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
         {!form.isPublished && hasPendingRequest && (
           <DropdownMenuItem disabled className="text-muted-foreground">
             <Globe className="h-4 w-4 mr-2" />
-            Public Request Pending
+            {dict.formActions.menuItems.publicRequestPending}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

@@ -9,11 +9,12 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { FilterBar, SortOption } from "@/components/forms/FilterBar";
+import { useDictionary } from "@/hooks/useDictionary";
 
 interface Form {
   id: string;
@@ -22,28 +23,30 @@ interface Form {
   createdAt: string;
 }
 
-const sortOptions = [
-  { value: "newest" as SortOption, label: "Newest First" },
-  { value: "oldest" as SortOption, label: "Oldest First" },
-];
-
 export default function AdminForms() {
   const router = useRouter();
+  const { locale } = useParams();
+  const dict = useDictionary();
   const [forms, setForms] = useState<Form[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
+  const sortOptions = [
+    { value: "newest" as SortOption, label: dict.dashboard.adminForms.sort.newest },
+    { value: "oldest" as SortOption, label: dict.dashboard.adminForms.sort.oldest },
+  ];
+
   useEffect(() => {
     const fetchForms = async () => {
       try {
         const response = await fetch("/api/users/admin-forms");
-        if (!response.ok) throw new Error("Failed to fetch forms");
+        if (!response.ok) throw new Error(dict.dashboard.adminForms.error);
         const data = await response.json();
         setForms(data.forms);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to load forms");
+        setError(error instanceof Error ? error.message : dict.dashboard.adminForms.error);
         console.error("Failed to fetch forms:", error);
       } finally {
         setIsLoading(false);
@@ -51,7 +54,7 @@ export default function AdminForms() {
     };
 
     fetchForms();
-  }, []);
+  }, [dict.dashboard.adminForms.error]);
 
   // Filter and sort forms
   const filteredForms = useMemo(() => {
@@ -99,7 +102,7 @@ export default function AdminForms() {
   if (forms.length === 0) {
     return (
       <div className="text-center text-muted-foreground p-4">
-        <p>No forms available from your organization yet.</p>
+        <p>{dict.dashboard.adminForms.noForms}</p>
       </div>
     );
   }
@@ -112,12 +115,12 @@ export default function AdminForms() {
         sortBy={sortBy}
         onSortChange={setSortBy}
         sortOptions={sortOptions}
-        placeholder="Search forms..."
+        placeholder={dict.dashboard.adminForms.search.placeholder}
       />
 
       {filteredForms.length === 0 ? (
         <div className="text-center text-muted-foreground p-4">
-          <p>No forms match your search criteria.</p>
+          <p>{dict.dashboard.adminForms.noResults}</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -134,13 +137,16 @@ export default function AdminForms() {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-muted-foreground">
-                    Created {new Date(form.createdAt).toLocaleDateString()}
+                    {dict.dashboard.adminForms.form.createdAt.replace(
+                      "{0}",
+                      new Date(form.createdAt).toLocaleDateString()
+                    )}
                   </p>
                   <Button
-                    onClick={() => router.push(`/forms/${form.id}`)}
+                    onClick={() => router.push(`/${locale}/forms/${form.id}` as `/${string}${string}`)}
                     variant="default"
                   >
-                    Fill Form
+                    {dict.dashboard.adminForms.form.fillForm}
                   </Button>
                 </div>
               </CardContent>

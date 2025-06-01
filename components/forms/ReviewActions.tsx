@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { useDictionary } from "@/hooks/useDictionary";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,7 @@ export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
   // Router and toast setup
   const router = useRouter();
   const { toast } = useToast();
+  const dict = useDictionary();
   
   // Loading state management
   const [isProcessing, setIsProcessing] = useState(false);
@@ -74,20 +76,20 @@ export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to accept request');
+        throw new Error(data.error || dict.review.notifications.accept.error.description);
       }
 
       toast({
-        title: "Request accepted",
-        description: "The form has been published successfully.",
+        title: dict.review.notifications.accept.success.title,
+        description: dict.review.notifications.accept.success.description,
       });
 
       router.push('/dashboard?tab=requests');
       router.refresh();
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to accept request",
+        title: dict.review.notifications.accept.error.title,
+        description: error instanceof Error ? error.message : dict.review.notifications.accept.error.description,
         variant: "destructive",
       });
     } finally {
@@ -108,20 +110,20 @@ export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to reject request');
+        throw new Error(data.error || dict.review.notifications.reject.error.description);
       }
 
       toast({
-        title: "Request rejected",
-        description: "The request has been rejected successfully.",
+        title: dict.review.notifications.reject.success.title,
+        description: dict.review.notifications.reject.success.description,
       });
 
       router.push('/dashboard?tab=requests');
       router.refresh();
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to reject request",
+        title: dict.review.notifications.reject.error.title,
+        description: error instanceof Error ? error.message : dict.review.notifications.reject.error.description,
         variant: "destructive",
       });
     } finally {
@@ -138,7 +140,7 @@ export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
           className="gap-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Requests
+          {dict.review.actions.backToRequests}
         </Button>
       </Link>
 
@@ -152,23 +154,23 @@ export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
               disabled={isProcessing}
               className="w-full sm:w-auto"
             >
-              Reject Request
+              {dict.review.actions.rejectRequest}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to reject this request?</AlertDialogTitle>
+              <AlertDialogTitle>{dict.review.confirmations.reject.title}</AlertDialogTitle>
               <AlertDialogDescription className="text-muted-foreground">
-                This action cannot be undone. The form request will be permanently deleted.
+                {dict.review.confirmations.reject.description}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="mt-0">{dict.review.actions.cancel}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleReject}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Reject
+                {dict.review.actions.reject}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -182,23 +184,23 @@ export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
               disabled={isProcessing}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90"
             >
-              Accept Request
+              {dict.review.actions.acceptRequest}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to accept this request?</AlertDialogTitle>
+              <AlertDialogTitle>{dict.review.confirmations.accept.title}</AlertDialogTitle>
               <AlertDialogDescription className="text-muted-foreground">
-                This will publish the form and make it available to the public. The request will be removed from the pending requests.
+                {dict.review.confirmations.accept.description}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="mt-0">{dict.review.actions.cancel}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleAccept}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Accept
+                {dict.review.actions.accept}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

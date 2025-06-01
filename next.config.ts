@@ -6,6 +6,7 @@
  * - Image optimization and domains
  * - Environment variables
  * - Build and development options
+ * - Experimental features
  */
 
 /** @type {import('next').NextConfig} */
@@ -26,6 +27,14 @@ const nextConfig = {
       'lh3.googleusercontent.com'
     ],
   },
+
+  /**
+   * Experimental Features
+   * Enables experimental Next.js features
+   */
+  experimental: {
+    typedRoutes: true,
+  },
 }
 
-module.exports = nextConfig 
+export default nextConfig 

@@ -14,7 +14,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { FilterBar, SortOption } from "./FilterBar";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * Request Interface
@@ -60,17 +61,6 @@ interface Request {
 }
 
 /**
- * Sort options configuration
- * Defines available sorting criteria for form requests
- */
-const sortOptions = [
-  { value: "newest" as SortOption, label: "Newest First" },
-  { value: "oldest" as SortOption, label: "Oldest First" },
-  { value: "pending" as SortOption, label: "Pending First" },
-  { value: "accepted" as SortOption, label: "Accepted First" },
-];
-
-/**
  * PublicRequest Component
  * Main component for managing form publication requests
  * 
@@ -80,12 +70,21 @@ export default function PublicRequest() {
   // Router and session setup
   const router = useRouter();
   const { data: session } = useSession();
+  const dict = useDictionary();
 
   // Component state management
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  // Sort options with translations
+  const sortOptions = useMemo(() => [
+    { value: "newest" as SortOption, label: dict.publicRequest.sort.newest },
+    { value: "oldest" as SortOption, label: dict.publicRequest.sort.oldest },
+    { value: "pending" as SortOption, label: dict.publicRequest.sort.pending },
+    { value: "accepted" as SortOption, label: dict.publicRequest.sort.accepted },
+  ], [dict.publicRequest.sort]);
 
   /**
    * Handles search query updates
@@ -117,16 +116,16 @@ export default function PublicRequest() {
         const response = await fetch("/api/forms/requests");
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch requests");
+          throw new Error(errorData.error || dict.publicRequest.notifications.error.fetchFailed);
         }
         const data = await response.json();
         if (!data.requests) {
-          throw new Error("Invalid response format");
+          throw new Error(dict.publicRequest.notifications.error.invalidResponse);
         }
         setRequests(data.requests);
       } catch (error) {
         console.error("Error fetching requests:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to load form requests");
+        toast.error(error instanceof Error ? error.message : dict.publicRequest.notifications.error.loadFailed);
       } finally {
         setIsLoading(false);
       }
@@ -135,7 +134,7 @@ export default function PublicRequest() {
     if (session?.user) {
       fetchRequests();
     }
-  }, [session]);
+  }, [session, dict.publicRequest.notifications.error]);
 
   /**
    * Handles request approval or rejection
@@ -156,7 +155,7 @@ export default function PublicRequest() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${action} request`);
+        throw new Error(errorData.error || dict.publicRequest.notifications.error.actionFailed.replace("{0}", action));
       }
 
       // Update the local state
@@ -168,10 +167,10 @@ export default function PublicRequest() {
         )
       );
 
-      toast.success(`Request ${action}d successfully`);
+      toast.success(dict.publicRequest.notifications.success.actionSuccess.replace("{0}", action));
     } catch (error) {
       console.error(`Error ${action}ing request:`, error);
-      toast.error(error instanceof Error ? error.message : `Failed to ${action} request`);
+      toast.error(error instanceof Error ? error.message : dict.publicRequest.notifications.error.actionFailed.replace("{0}", action));
     }
   };
 
@@ -213,21 +212,21 @@ export default function PublicRequest() {
         sortBy={sortBy}
         onSortChange={handleSortChange}
         sortOptions={sortOptions}
-        placeholder="Search requests..."
+        placeholder={dict.publicRequest.search.placeholder}
       />
 
       {/* Loading State */}
       {isLoading ? (
         <div className="flex items-center justify-center h-32">
-          <p>Loading requests...</p>
+          <p>{dict.publicRequest.loading}</p>
         </div>
       ) : filteredAndSortedRequests.length === 0 ? (
         // Empty State
         <div className="text-center py-8">
           <p className="text-muted-foreground">
             {searchQuery 
-              ? "No requests match your search criteria."
-              : "No pending form requests."}
+              ? dict.publicRequest.empty.noResults
+              : dict.publicRequest.empty.noRequests}
           </p>
         </div>
       ) : (
@@ -242,7 +241,10 @@ export default function PublicRequest() {
                     <div>
                       <CardTitle className="text-lg">{request.form.title}</CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Requested by {request.form.user.name || request.form.user.email}
+                        {dict.publicRequest.request.requestedBy.replace(
+                          "{0}",
+                          request.form.user.name || request.form.user.email || ""
+                        )}
                       </p>
                     </div>
                     {/* Request Status Badge */}
@@ -253,7 +255,9 @@ export default function PublicRequest() {
                           : "secondary"
                       }
                     >
-                      {request.accepted ? "APPROVED" : "PENDING"}
+                      {request.accepted 
+                        ? dict.publicRequest.request.status.approved 
+                        : dict.publicRequest.request.status.pending}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -266,9 +270,9 @@ export default function PublicRequest() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => router.push(`/review/${request.formId}`)}
+                            onClick={() => router.push(`/review/${request.formId}` as `/${string}`)}
                           >
-                            Review
+                            {dict.publicRequest.request.actions.review}
                           </Button>
                         </>
                       )}

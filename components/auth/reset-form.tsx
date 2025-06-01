@@ -15,6 +15,7 @@
 import type React from "react";
 import { startTransition, useTransition } from "react";
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -33,6 +34,7 @@ import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { BackButton } from "./BackButton";
 import { reset } from "@/actions/reset";
+import { useDictionary } from "@/hooks/useDictionary";
 
 /**
  * ResetForm Component
@@ -53,6 +55,8 @@ import { reset } from "@/actions/reset";
  * - Back navigation
  */
 function ResetForm() {
+  const dict = useDictionary();
+  const { locale } = useParams();
   // Initialize form with validation schema
   const form = useForm<z.infer<typeof ResetSchema>>({
     resolver: zodResolver(ResetSchema),
@@ -100,10 +104,10 @@ function ResetForm() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Forgot your password ?
+            {dict.auth.reset.title}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your credentials to sign in to your account
+            {dict.auth.reset.description}
           </p>
         </div>
 
@@ -116,11 +120,11 @@ function ResetForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{dict.auth.reset.emailLabel}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="example@gmail.com"
+                          placeholder={dict.auth.reset.emailPlaceholder}
                           type="email"
                           disabled={isPending}
                         />
@@ -134,12 +138,15 @@ function ResetForm() {
               <FormSuccess message={success} />
               <FormError message={error} />
               <Button type="submit" className="w-full">
-                Send reset link 
+                {dict.auth.reset.submitButton}
               </Button>
             </div>
           </form>
         </Form>
-        <BackButton href="/auth/login" label="Back to login" />
+        <BackButton 
+          href={`/${locale}/auth/login` as `/${string}${string}`}
+          label={dict.auth.reset.backToLogin} 
+        />
       </div>
     </div>
   );

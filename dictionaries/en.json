@@ -1,0 +1,825 @@
+{
+  "common": {
+    "switchLanguage": "Switch Language",
+    "login": "Login",
+    "signup": "Sign Up",
+    "welcome": "Welcome",
+    "forms": "Forms",
+    "createForm": "Create Form",
+    "myForms": "My Forms",
+    "settings": "Settings"
+  },
+  "profile": {
+    "title": "Profile",
+    "id": "ID",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "twoFactor": "2FA",
+    "adminCode": "Admin Code",
+    "notSet": "Not set",
+    "copySuccess": "Admin code copied to clipboard!",
+    "copyError": "Failed to copy admin code",
+    "on": "ON",
+    "off": "OFF"
+  },
+  "formBuilder": {
+    "formTitle": "Form Title",
+    "formDescription": "Form Description",
+    "enterTitle": "Enter form title",
+    "enterDescription": "Enter form description",
+    "colors": "Colors",
+    "saving": "Saving...",
+    "saveForm": "Save Form",
+    "addHeader": "Add Header",
+    "editHeader": "Edit Header",
+    "addFooter": "Add Footer",
+    "editFooter": "Edit Footer",
+    "backgroundColor": "Background Color",
+    "textColor": "Text Color",
+    "addField": "Add Field",
+    "formLayout": "Form Layout",
+    "dragFieldsHint": "Drag fields to position and resize them in the grid",
+    "livePreview": "Live Preview",
+    "previewHint": "See how your form will look to users",
+    "untitledForm": "Untitled Form",
+    "fieldTypes": {
+      "shortAnswer": "Short Answer",
+      "paragraph": "Paragraph",
+      "richText": "Rich Text",
+      "multipleChoice": "Multiple Choice",
+      "checkboxes": "Checkboxes",
+      "dropdown": "Dropdown",
+      "imageUpload": "Image Upload"
+    },
+    "validation": {
+      "titleRequired": "Form title is required",
+      "fieldsRequired": "Add at least one field to the form (excluding the submit button)",
+      "saveSuccess": "Form saved successfully",
+      "saveSuccessDesc": "Your form has been created and is ready to share.",
+      "saveError": "Error saving form",
+      "tryAgain": "Please try again later."
+    },
+    "header": {
+      "title": "Header Configuration",
+      "description": "Configure the header with a logo and text",
+      "logo": "Logo",
+      "text": "Text Content",
+      "uploadLogo": "Upload Logo",
+      "changeLogo": "Change Logo",
+      "uploading": "Uploading...",
+      "maxChars": "characters",
+      "enable": "Enable Header",
+      "close": "Close",
+      "logoUploadError": {
+        "invalidType": "Invalid file type. Please upload an image file (PNG, JPG, GIF)",
+        "tooLarge": "File too large. Please upload an image smaller than 2MB",
+        "uploadFailed": "Failed to upload logo"
+      },
+      "logoUploadSuccess": "Logo uploaded successfully"
+    },
+    "footer": {
+      "title": "Footer Configuration",
+      "description": "Configure the footer with a logo and text",
+      "logo": "Logo",
+      "text": "Text Content",
+      "uploadLogo": "Upload Logo",
+      "changeLogo": "Change Logo",
+      "uploading": "Uploading...",
+      "maxChars": "characters",
+      "enable": "Enable Footer",
+      "close": "Close",
+      "logoUploadError": {
+        "invalidType": "Invalid file type. Please upload an image file (PNG, JPG, GIF)",
+        "tooLarge": "File too large. Please upload an image smaller than 2MB",
+        "uploadFailed": "Failed to upload logo"
+      },
+      "logoUploadSuccess": "Logo uploaded successfully"
+    },
+    "fieldDetails": {
+      "editField": "Edit Field Details",
+      "addNewField": "Add New Field",
+      "question": "Question",
+      "enterQuestion": "Enter question text",
+      "required": "Required",
+      "content": "Content",
+      "enterContent": "Enter your content here...",
+      "options": "Options",
+      "addOption": "Add Option",
+      "description": "Description (Optional)",
+      "enterDesc": "Enter description here...",
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "removeOption": "Remove option"
+    }
+  },
+  "responses": {
+    "submissionDetails": "Submission Details",
+    "submittedAgo": "Submitted {0} ago",
+    "form": "Form",
+    "noSubmission": "No submission found",
+    "print": "Print",
+    "preparing": "Preparing..."
+  },
+  "dashboard": {
+    "superAdmin": {
+      "title": "Super Admin Dashboard",
+      "welcomeBack": "Welcome back, Super Admin {0}",
+      "tabs": {
+        "myForms": "My Forms",
+        "published": "Published Forms",
+        "requests": "Form Requests",
+        "responses": "All Responses"
+      },
+      "descriptions": {
+        "myForms": "Create and manage your forms",
+        "published": "View and manage all published forms",
+        "requests": "Review and manage all form publication requests",
+        "responses": "View and manage responses for all forms"
+      }
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "welcomeBack": "Welcome back, Admin {0}",
+      "tabs": {
+        "myForms": "My Forms",
+        "published": "Published Forms",
+        "responses": "My Form Responses"
+      },
+      "descriptions": {
+        "myForms": "Create and manage all your forms",
+        "published": "View and manage all published forms",
+        "responses": "View responses for your forms only"
+      }
+    },
+    "user": {
+      "title": "User Dashboard",
+      "welcomeBack": "Welcome back, {0}",
+      "organization": {
+        "title": "Organization",
+        "description": "Your connected organization details",
+        "loading": "Loading organization info...",
+        "unnamedAdmin": "Unnamed Admin",
+        "error": "Failed to load organization info"
+      },
+      "tabs": {
+        "forms": "Available Forms",
+        "submissions": "My Submissions"
+      },
+      "descriptions": {
+        "forms": "View and fill out forms from your organization",
+        "submissions": "Track your form submission history"
+      }
+    },
+    "adminForms": {
+      "loading": "Loading...",
+      "error": "Failed to load forms",
+      "noForms": "No forms available from your organization yet.",
+      "noResults": "No forms match your search criteria.",
+      "search": {
+        "placeholder": "Search forms..."
+      },
+      "sort": {
+        "newest": "Newest First",
+        "oldest": "Oldest First"
+      },
+      "form": {
+        "fillForm": "Fill Form",
+        "createdAt": "Created {0}"
+      }
+    },
+    "connectToAdmin": {
+      "title": "Connect to Organization",
+      "description": "Enter your organization's admin code to get started",
+      "placeholder": "Enter admin code",
+      "connect": "Connect",
+      "connecting": "Connecting...",
+      "success": {
+        "title": "Success!",
+        "description": "You have been connected to the organization"
+      },
+      "error": {
+        "title": "Error",
+        "defaultMessage": "An unexpected error occurred",
+        "failedToConnect": "Failed to connect to admin"
+      }
+    },
+    "mySubmissions": {
+      "loading": "Loading...",
+      "error": {
+        "fetchFailed": "Failed to fetch submissions",
+        "loadFailed": "Failed to load submissions"
+      },
+      "noSubmissions": "You haven't submitted any forms yet.",
+      "noResults": "No submissions match your search criteria.",
+      "search": {
+        "placeholder": "Search submissions..."
+      },
+      "sort": {
+        "newest": "Newest First",
+        "oldest": "Oldest First"
+      },
+      "submission": {
+        "viewButton": "View Submission",
+        "submittedOn": "Submitted {0}"
+      }
+    },
+    "manager": {
+      "title": "Manager Dashboard",
+      "welcomeBack": "Welcome back, Manager {0}",
+      "tabs": {
+        "myForms": "My Forms",
+        "published": "Published Forms",
+        "responses": "Form Responses"
+      },
+      "descriptions": {
+        "myForms": "Create and manage your forms",
+        "published": "View and manage your published forms",
+        "responses": "View responses for your forms only"
+      }
+    }
+  },
+  "formPreview": {
+    "buttons": {
+      "print": "Print",
+      "preparing": "Preparing...",
+      "close": "Close",
+      "submit": "Submit",
+      "chooseFile": "Choose File"
+    },
+    "imageUpload": {
+      "clickToUpload": "Click to upload or drag and drop",
+      "fileTypes": "PNG, JPG, GIF up to 10MB",
+      "success": "Image uploaded successfully",
+      "error": "Failed to upload image",
+      "remove": "Remove Image",
+      "noImage": "No image uploaded"
+    },
+    "validation": {
+      "requiredFields": "Please fill in all required fields:",
+      "submitSuccess": "Form submitted successfully",
+      "submitError": "Error submitting form",
+      "tryAgain": "Please try again later",
+      "thankYou": "Thank you for your submission!"
+    },
+    "submission": {
+      "success": "Form Submitted Successfully!",
+      "thankYou": "Thank you for your submission. You can print your submission or close this page.",
+      "alreadySubmitted": "Already Submitted",
+      "submittedOn": "Submitted on {0}",
+      "viewSubmission": "View your submission"
+    },
+    "print": {
+      "dialogOpened": "Print dialog opened",
+      "ready": "Your form is ready to print.",
+      "error": "Failed to open print window"
+    },
+    "noContent": "No content available"
+  },
+  "logs": {
+    "title": "Form Activity Logs",
+    "description": "Monitor form creation, submissions, and other activities",
+    "metadata": {
+      "title": "Form Logs | Admin Dashboard",
+      "description": "View and analyze form activity logs"
+    },
+    "filters": {
+      "searchPlaceholder": "Search logs...",
+      "level": {
+        "title": "Filter by level",
+        "all": "All Levels",
+        "error": "Error",
+        "warn": "Warning",
+        "info": "Info",
+        "debug": "Debug"
+      },
+      "event": {
+        "title": "Filter by event",
+        "all": "All Events",
+        "formCreated": "Form Created",
+        "formSubmitted": "Form Submitted",
+        "formMadePrivate": "Made Private",
+        "formMadePublic": "Made Public",
+        "formDeleted": "Form Deleted"
+      }
+    },
+    "table": {
+      "headers": {
+        "timestamp": "Timestamp",
+        "level": "Level",
+        "event": "Event",
+        "form": "Form",
+        "user": "User"
+      },
+      "loading": "Loading logs...",
+      "noLogs": {
+        "title": "No logs found",
+        "description": "Make sure you have the correct permissions and log files exist."
+      },
+      "noResults": {
+        "title": "No logs match your filters",
+        "description": "Try adjusting your search or filters."
+      },
+      "tooltips": {
+        "event": "Event: {0}",
+        "raw": "Raw: {0}",
+        "form": {
+          "id": "ID: {0}"
+        },
+        "user": {
+          "title": "User: {0}",
+          "id": "ID: {0}"
+        }
+      }
+    },
+    "actions": {
+      "refresh": "Refresh logs",
+      "export": "Export logs",
+      "tryAgain": "Try Again"
+    },
+    "errors": {
+      "title": "Error loading logs:",
+      "fetchFailed": "Failed to fetch logs: {0}",
+      "invalidData": "Invalid logs data received from server"
+    }
+  },
+  "review": {
+    "metadata": {
+      "title": "Form Review | Admin Dashboard",
+      "description": "Review form publication requests"
+    },
+    "actions": {
+      "backToRequests": "Back to Requests",
+      "rejectRequest": "Reject Request",
+      "acceptRequest": "Accept Request",
+      "cancel": "Cancel",
+      "reject": "Reject",
+      "accept": "Accept"
+    },
+    "confirmations": {
+      "reject": {
+        "title": "Are you sure you want to reject this request?",
+        "description": "This action cannot be undone. The form request will be permanently deleted."
+      },
+      "accept": {
+        "title": "Are you sure you want to accept this request?",
+        "description": "This will publish the form and make it available to the public. The request will be removed from the pending requests."
+      }
+    },
+    "notifications": {
+      "accept": {
+        "success": {
+          "title": "Request accepted",
+          "description": "The form has been published successfully."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Failed to accept request"
+        }
+      },
+      "reject": {
+        "success": {
+          "title": "Request rejected",
+          "description": "The request has been rejected successfully."
+        },
+        "error": {
+          "title": "Error",
+          "description": "Failed to reject request"
+        }
+      }
+    }
+  },
+  "search": {
+    "metadata": {
+      "title": "User Search | Admin Dashboard",
+      "description": "Search and manage system users"
+    },
+    "placeholder": "Search users...",
+    "errors": {
+      "fetchFailed": "Failed to fetch users",
+      "searchFailed": "Failed to search users"
+    },
+    "states": {
+      "loading": "Loading users...",
+      "noResults": "No users found"
+    },
+    "table": {
+      "headers": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "forms": "Forms"
+      }
+    }
+  },
+  "settings": {
+    "metadata": {
+      "title": "Settings | Account Management",
+      "description": "Manage your account settings and preferences"
+    },
+    "title": "Settings",
+    "messages": {
+      "error": "Something went wrong!"
+    },
+    "form": {
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter your name"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter your email"
+      },
+      "password": {
+        "current": {
+          "label": "Current Password",
+          "placeholder": "Enter your current password"
+        },
+        "new": {
+          "label": "New Password",
+          "placeholder": "Enter your new password"
+        }
+      },
+      "twoFactor": {
+        "label": "Two Factor Authentication",
+        "description": "Enable two factor authentication for your account"
+      }
+    },
+    "actions": {
+      "save": "Save Changes"
+    }
+  },
+  "submissions": {
+    "metadata": {
+      "title": "Submission Details | Form Management",
+      "description": "View details of your form submission"
+    },
+    "details": {
+      "title": "Submission Details",
+      "submitted": "Submitted {0} ago",
+      "noSubmission": "No submission found",
+      "unauthorized": "You are not authorized to view this submission"
+    }
+  },
+  "userEdit": {
+    "metadata": {
+      "title": "Edit User | Admin Dashboard",
+      "description": "Manage user details and permissions"
+    },
+    "title": "Edit User",
+    "description": "Manage user details and permissions",
+    "notFound": {
+      "title": "User Not Found",
+      "description": "The requested user could not be found.",
+      "action": "Back to Users"
+    },
+    "form": {
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter user name"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter user email"
+      },
+      "role": {
+        "label": "Role",
+        "placeholder": "Select user role",
+        "options": {
+          "user": "User",
+          "manager": "Manager",
+          "admin": "Admin",
+          "sadmin": "Super Admin"
+        }
+      },
+      "twoFactor": {
+        "label": "Two Factor Authentication",
+        "description": "Enable two factor authentication for this user"
+      },
+      "adminCode": {
+        "label": "Admin Code",
+        "noCode": "No admin code",
+        "copy": "Copy",
+        "copied": "Copied!"
+      }
+    },
+    "actions": {
+      "save": "Save Changes",
+      "delete": {
+        "button": "Delete User",
+        "title": "Delete User",
+        "description": "Are you sure you want to delete this user? This action cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      }
+    },
+    "messages": {
+      "loadError": "Failed to load user data",
+      "updateError": "Failed to update user",
+      "updateSuccess": "User updated successfully",
+      "deleteError": "Failed to delete user",
+      "deleteSuccess": "User deleted successfully"
+    },
+    "deleteDialog": {
+      "title": "Are you absolutely sure?",
+      "description": "This action cannot be undone. This will permanently delete the user account and all associated data.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "formActions": {
+    "menuItems": {
+      "requestPublic": "Request Public",
+      "makePrivate": "Make Private",
+      "viewSubmissions": "View Submissions",
+      "reuseForm": "Reuse Form",
+      "viewForm": "View Form",
+      "publicRequestPending": "Public Request Pending",
+      "shareForm": "Share Form"
+    },
+    "notifications": {
+      "makePrivate": {
+        "success": {
+          "title": "Form Made Private",
+          "description": "The form is now private and only accessible to authorized users"
+        },
+        "error": {
+          "title": "Error Making Form Private",
+          "description": "Failed to make the form private. Please try again."
+        }
+      },
+      "requestPublic": {
+        "success": {
+          "title": "Public Request Submitted",
+          "description": "Your request to make this form public has been submitted"
+        },
+        "error": {
+          "title": "Error Requesting Public",
+          "description": "Failed to submit public request. Please try again."
+        }
+      }
+    },
+    "share": {
+      "title": "Share {0}",
+      "text": "Check out this form: {0}",
+      "copied": {
+        "title": "Link copied!",
+        "description": "Link has been copied to clipboard."
+      }
+    }
+  },
+  "formResponses": {
+    "loading": "Loading forms...",
+    "noForms": {
+      "admin": "You haven't created any forms yet.",
+      "manager": "No forms available in the system.",
+      "default": "No forms available."
+    },
+    "select": {
+      "placeholder": "Select a form",
+      "responses": "{0} response",
+      "responses_plural": "{0} responses"
+    },
+    "responses": {
+      "title": "Responses for \"{0}\"",
+      "noResponses": "No responses yet for this form.",
+      "responseNumber": "Response #{0}",
+      "timeAgo": "{0} ago"
+    }
+  },
+  "myForms": {
+    "actions": {
+      "createNew": "Create New Form",
+      "createFirst": "Create Your First Form"
+    },
+    "search": {
+      "placeholder": "Search your forms..."
+    },
+    "sort": {
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "mostSubmissions": "Most Submissions",
+      "leastSubmissions": "Least Submissions"
+    },
+    "status": {
+      "published": "Published",
+      "notPublished": "Not Published"
+    },
+    "loading": {
+      "error": {
+        "title": "Error",
+        "fetchFailed": "Failed to fetch forms"
+      }
+    },
+    "empty": {
+      "title": "No Forms Found",
+      "noResults": "No forms match your search criteria.",
+      "noForms": "You haven't created any forms yet."
+    },
+    "form": {
+      "noDescription": "No description",
+      "lastUpdated": "Updated {0} ago",
+      "submissions": {
+        "single": "{0} submission",
+        "multiple": "{0} submissions"
+      }
+    }
+  },
+  "publicRequest": {
+    "loading": "Loading requests...",
+    "empty": {
+      "noResults": "No requests match your search criteria.",
+      "noRequests": "No pending form requests."
+    },
+    "search": {
+      "placeholder": "Search requests..."
+    },
+    "sort": {
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "pending": "Pending First",
+      "accepted": "Accepted First"
+    },
+    "request": {
+      "requestedBy": "Requested by {0}",
+      "status": {
+        "approved": "APPROVED",
+        "pending": "PENDING"
+      },
+      "actions": {
+        "review": "Review"
+      }
+    },
+    "notifications": {
+      "error": {
+        "fetchFailed": "Failed to fetch requests",
+        "invalidResponse": "Invalid response format",
+        "loadFailed": "Failed to load form requests",
+        "actionFailed": "Failed to {0} request"
+      },
+      "success": {
+        "actionSuccess": "Request {0}d successfully"
+      }
+    }
+  },
+  "publishedForms": {
+    "loading": {
+      "title": "Loading Forms",
+      "error": {
+        "title": "Error",
+        "fetchFailed": "Failed to fetch published forms",
+        "defaultError": "An error occurred"
+      }
+    },
+    "empty": {
+      "title": "No Forms Found",
+      "noResults": "No forms match your search criteria.",
+      "noForms": "There are no published forms available at the moment."
+    },
+    "search": {
+      "placeholder": "Search forms..."
+    },
+    "sort": {
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "mostSubmissions": "Most Submissions",
+      "leastSubmissions": "Least Submissions"
+    },
+    "form": {
+      "noDescription": "No description provided",
+      "creator": {
+        "title": "Created by"
+      },
+      "lastUpdated": "Updated {0} ago",
+      "submissions": {
+        "single": "{0} submission",
+        "multiple": "{0} submissions"
+      }
+    }
+  },
+  "userInfo": {
+    "notifications": {
+      "adminCode": {
+        "copySuccess": "Admin code copied to clipboard!",
+        "copyError": "Failed to copy admin code"
+      }
+    },
+    "fields": {
+      "id": "ID",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "adminCode": "Admin Code",
+      "twoFactor": "Two-Factor Authentication"
+    },
+    "values": {
+      "notSet": "Not set",
+      "noAdminCode": "No admin code available",
+      "twoFactor": {
+        "on": "Enabled",
+        "off": "Disabled"
+      }
+    }
+  },
+  "navbar": {
+    "brand": "AppName",
+    "navigation": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "settings": "Settings",
+      "manageUsers": "Manage Users",
+      "logs": "Logs",
+      "home": "Home",
+      "login": "Login"
+    },
+    "theme": {
+      "toggleTheme": "Toggle theme",
+      "darkMode": "Dark Mode",
+      "lightMode": "Light Mode"
+    },
+    "language": {
+      "title": "Language"
+    },
+    "userMenu": {
+      "profile": "Profile",
+      "settings": "Settings",
+      "logout": "Log out"
+    },
+    "mobileMenu": {
+      "openMenu": "Open menu"
+    },
+    "screenReader": {
+      "navigation": "Navigation Menu"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "description": "Enter your email to sign in to your account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "example@gmail.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "******",
+      "forgotPassword": "Forgot Password?",
+      "submitButton": "Login",
+      "confirmButton": "Confirm",
+      "twoFactorLabel": "Two Factor Code",
+      "twoFactorPlaceholder": "123456",
+      "orContinueWith": "Or continue with",
+      "noAccount": "Don't have an account?",
+      "oauthError": "Email already in use with different provider!"
+    },
+    "register": {
+      "title": "Create an account",
+      "description": "Enter your credentials to register a new account",
+      "nameLabel": "Name",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "example@gmail.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "******",
+      "submitButton": "Create an account",
+      "orContinueWith": "Or continue with",
+      "haveAccount": "Already have an account?"
+    },
+    "signup": "Sign Up",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "verifyEmail": "Verify Email",
+    "twoFactor": "Two Factor Authentication",
+    "error": {
+      "title": "Something went wrong",
+      "backToLogin": "Back to login"
+    },
+    "newPassword": {
+      "title": "New password",
+      "description": "Enter your new password below",
+      "passwordLabel": "New password",
+      "passwordPlaceholder": "******",
+      "submitButton": "Reset password",
+      "backToLogin": "Back to login"
+    },
+    "verification": {
+      "title": "Confirming your verification",
+      "loading": "Confirming your verification",
+      "backToLogin": "Back to login",
+      "error": {
+        "missingToken": "Missing token",
+        "default": "Something went wrong!"
+      }
+    },
+    "reset": {
+      "title": "Forgot your password?",
+      "description": "Enter your email to reset your password",
+      "emailLabel": "Email",
+      "emailPlaceholder": "example@gmail.com",
+      "submitButton": "Send reset link",
+      "backToLogin": "Back to login"
+    }
+  },
+  "notFound": {
+    "title": "404 - Page Not Found",
+    "description": "The page you are looking for does not exist.",
+    "returnHome": "Return Home"
+  }
+} 

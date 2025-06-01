@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import * as z from "zod";
 import {
   Form,
@@ -21,10 +21,12 @@ import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
 import { BackButton } from "./BackButton";
 import { newPassword } from "@/actions/new-password";
+import { useDictionary } from "@/hooks/useDictionary";
 
-function NewPasswordFrom() {
-
-  const searchParams =useSearchParams();
+function NewPasswordForm() {
+  const dict = useDictionary();
+  const { locale } = useParams();
+  const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
   const form = useForm<z.infer<typeof NewPasswordSchema>>({
@@ -41,10 +43,8 @@ function NewPasswordFrom() {
     setError("");
     setSuccess("");
 
- 
-
     startTransition(() => {
-      newPassword(values,token).then((data) => {
+      newPassword(values, token).then((data) => {
         if (data) {
           setError(data.error);
           setSuccess(data.success);
@@ -58,10 +58,10 @@ function NewPasswordFrom() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            New password
+            {dict.auth.newPassword.title}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your credentials to sign in to your account
+            {dict.auth.newPassword.description}
           </p>
         </div>
 
@@ -74,11 +74,11 @@ function NewPasswordFrom() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>New password</FormLabel>
+                      <FormLabel>{dict.auth.newPassword.passwordLabel}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="******"
+                          placeholder={dict.auth.newPassword.passwordPlaceholder}
                           type="password"
                           disabled={isPending}
                         />
@@ -87,20 +87,22 @@ function NewPasswordFrom() {
                     </FormItem>
                   )}
                 />
-
               </div>
               <FormSuccess message={success} />
               <FormError message={error} />
               <Button type="submit" className="w-full">
-                Reset password
+                {dict.auth.newPassword.submitButton}
               </Button>
             </div>
           </form>
         </Form>
-        <BackButton href="/auth/login" label="Back to login" />
+        <BackButton 
+          href={`/${locale}/auth/login` as `/${string}${string}`}
+          label={dict.auth.newPassword.backToLogin} 
+        />
       </div>
     </div>
   );
 }
 
-export default NewPasswordFrom;
+export default NewPasswordForm;
