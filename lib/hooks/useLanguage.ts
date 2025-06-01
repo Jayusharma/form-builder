@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { i18n } from '../i18n-config';
 
+type LanguageCode = typeof i18n.locales[number];
+
 export function useLanguage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -13,7 +15,7 @@ export function useLanguage() {
     const currentLocale = pathname.split('/')[1];
     
     // Check if it's a valid locale
-    if (i18n.locales.includes(currentLocale as any)) {
+    if (i18n.locales.includes(currentLocale as LanguageCode)) {
       // Store the locale preference
       localStorage.setItem('preferredLanguage', currentLocale);
     } else {
@@ -21,8 +23,8 @@ export function useLanguage() {
       const storedLocale = localStorage.getItem('preferredLanguage') || i18n.defaultLocale;
       
       // Redirect to the correct locale path if we're at the root
-      if (!pathname.startsWith(`/${storedLocale}`)) {
-        const newPath = `/${storedLocale}${pathname}` as `/${string}`;
+      if (pathname === '/') {
+        const newPath = `/${storedLocale}` as `/${string}`;
         router.push(newPath);
       }
     }

@@ -16,7 +16,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 // Remove dnd-kit imports
 // import { ... } from '@dnd-kit/core';
 // import { ... } from '@dnd-kit/sortable';
@@ -34,33 +34,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   FormField, 
   FormFieldType, 
-  FormSchema, 
-  FormFieldSchema,
   FormStyle
 } from '@/lib/schemas/form';
 import { 
   TextIcon, 
-  ListIcon, 
   CheckSquareIcon, 
   RadioIcon, 
   ChevronDownIcon,
   GripVertical,
   PlusIcon,
   Trash2Icon,
-  MoveIcon,
-  SendIcon,
+  
   ImageIcon,
   FileTextIcon,
   MinusIcon,
   XIcon,
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormPreview } from '@/components/forms/FormPreview';
@@ -75,9 +71,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { HexColorPicker } from 'react-colorful';
+import Image from 'next/image';
 
 /**
  * Grid system configuration constants
@@ -116,25 +112,24 @@ const fieldTypeDefaultHeight: Record<FormFieldType, number> = {
  * Used for managing form fields within the grid layout system
  */
 interface GridFormField {
-  id: string;           // Unique identifier for the field
-  type: FormFieldType;  // Type of form field (TEXT, PARAGRAPH, etc.)
-  question: string;     // Field question/label
-  required: boolean;    // Whether the field is required
-  options?: string[];   // Options for choice-based fields
-  description: string | null; // Field description/help text
-  // Grid layout properties
-  i: string;           // react-grid-layout item ID
-  x: number;           // Grid x position
-  y: number;           // Grid y position
-  w: number;           // Grid width
-  h: number;           // Grid height
-  minW?: number;       // Minimum width
-  maxW?: number;       // Maximum width
-  minH?: number;       // Minimum height
-  maxH?: number;       // Maximum height
-  static?: boolean;    // Whether the field is static (not draggable)
-  isDraggable?: boolean; // Whether the field can be dragged
-  isResizable?: boolean; // Whether the field can be resized
+  id: string;
+  type: FormFieldType;
+  question: string;
+  required: boolean;
+  options?: string[];
+  description?: string | null;
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  maxW?: number;
+  minH?: number;
+  maxH?: number;
+  static?: boolean;
+  isDraggable?: boolean;
+  isResizable?: boolean;
 }
 
 /**
@@ -155,11 +150,6 @@ const fieldTypes: Array<{
   { type: 'DROPDOWN', label: 'Dropdown', icon: ChevronDownIcon, defaultWidth: 6 },
   { type: 'IMAGE_UPLOAD', label: 'Image Upload', icon: ImageIcon, defaultWidth: 6 },
 ];
-
-// Add a helper function to ensure valid option values
-const ensureValidOption = (option: string, index: number) => {
-  return option.trim() || `Option ${index + 1}`;
-};
 
 /**
  * OptionManager Component
@@ -444,13 +434,46 @@ function GridItem({
   );
 }
 
-// Add a helper function to ensure valid field type
-const ensureValidFieldType = (type: string | undefined): FormFieldType => {
-  const validTypes: FormFieldType[] = ['TEXT', 'PARAGRAPH', 'MULTIPLE_CHOICE', 'CHECKBOX', 'DROPDOWN', 'SUBMIT', 'IMAGE_UPLOAD', 'RICH_TEXT'];
-  return validTypes.includes(type as FormFieldType) ? (type as FormFieldType) : 'TEXT';
-};
+// Update color picker component to include label
+function ColorPickerField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
 
-// Define HeaderFooterConfig interface
+  return (
+    <div className="relative">
+      <Label className="text-xs font-medium mb-1">{label}</Label>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8 w-8 p-0 rounded-none border"
+          style={{ backgroundColor: value }}
+          onClick={() => setIsOpen(!isOpen)}
+        />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 text-xs font-mono"
+          placeholder="#000000"
+        />
+      </div>
+      {isOpen && (
+        <div className="absolute z-50 mt-2 p-2 bg-white border shadow-lg">
+          <HexColorPicker color={value} onChange={onChange} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Update HeaderFooterConfig interface
 interface HeaderFooterConfig {
   logo?: string;
   text?: string;
@@ -541,9 +564,6 @@ function FieldDetailsModal({
 }: FieldDetailsModalProps) {
   // Determine the actual field type we are working with (either new or existing)
   const currentFieldType = fieldType || initialFieldData?.type || null;
-
-  // Find the field type configuration based on the current field type
-  const fieldTypeConfig = fieldTypes.find(ft => ft.type === currentFieldType);
 
   // Use initialFieldData if provided, otherwise use the fieldData from state (for new fields)
   const currentFieldData = initialFieldData || fieldData;
@@ -653,45 +673,6 @@ function FieldDetailsModal({
   );
 }
 
-// Update color picker component to include label
-function ColorPickerField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (color: string) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <Label className="text-xs font-medium mb-1">{label}</Label>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-8 w-8 p-0 rounded-none border"
-          style={{ backgroundColor: value }}
-          onClick={() => setIsOpen(!isOpen)}
-        />
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 text-xs font-mono"
-          placeholder="#000000"
-        />
-      </div>
-      {isOpen && (
-        <div className="absolute z-50 mt-2 p-2 bg-white border shadow-lg">
-          <HexColorPicker color={value} onChange={onChange} />
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Update HeaderFooterConfig component
 function HeaderFooterConfig({
   type,
@@ -705,7 +686,6 @@ function HeaderFooterConfig({
   dict: HeaderFooterConfigDict;
 }) {
   const { toast } = useToast();
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -715,8 +695,7 @@ function HeaderFooterConfig({
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Error",
-        description: dict.logoUploadError.invalidType,
+        title: dict.logoUploadError.invalidType,
         variant: "destructive",
       });
       return;
@@ -725,14 +704,12 @@ function HeaderFooterConfig({
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "Error",
-        description: dict.logoUploadError.tooLarge,
+        title: dict.logoUploadError.tooLarge,
         variant: "destructive",
       });
       return;
     }
 
-    setLogoFile(file);
     setIsUploading(true);
 
     try {
@@ -745,25 +722,22 @@ function HeaderFooterConfig({
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error(dict.logoUploadError.uploadFailed);
       }
 
       const data = await response.json();
       onChange({ ...config, logo: data.url });
-      
+
       toast({
-        title: "Success",
-        description: dict.logoUploadSuccess,
+        title: dict.logoUploadSuccess,
       });
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        description: dict.logoUploadError.uploadFailed,
+        title: dict.logoUploadError.uploadFailed,
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
-      setLogoFile(null);
     }
   };
 
@@ -786,10 +760,13 @@ function HeaderFooterConfig({
             <div className="flex items-center gap-4">
               {config.logo && (
                 <div className="relative w-16 h-16">
-                  <img
+                  <Image
                     src={config.logo}
                     alt="Logo"
-                    className="w-full h-full object-contain rounded-none"
+                    width={64}
+                    height={64}
+                    className="object-contain rounded-none"
+                    unoptimized
                   />
                   <Button
                     variant="ghost"
@@ -895,6 +872,29 @@ function HeaderFooterModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+// Add after the imports
+interface ReusedFormField {
+  id: string;
+  type: FormFieldType;
+  question: string;
+  required: boolean;
+  options?: string[];
+  description?: string | null;
+  gridPosition?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+interface ReusedFormData {
+  fields: ReusedFormField[];
+  title?: string;
+  description?: string;
+  style?: Partial<FormStyle>;
 }
 
 /**
@@ -1012,7 +1012,7 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
     const reuseParam = searchParams.get('reuse');
     if (!reuseParam) return null;
     try {
-      return JSON.parse(decodeURIComponent(reuseParam));
+      return JSON.parse(decodeURIComponent(reuseParam)) as ReusedFormData;
     } catch (e) {
       console.error('Failed to parse reused form data:', e);
       return null;
@@ -1023,7 +1023,7 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
   const [fields, setFields] = useState<GridFormField[]>(() => {
     if (reusedFormData?.fields) {
       // Convert reused form fields to GridFormField format
-      return reusedFormData.fields.map((field: any) => ({
+      return reusedFormData.fields.map((field: ReusedFormField) => ({
         id: field.id,
         i: field.id, // react-grid-layout item ID
         type: field.type,
@@ -1060,7 +1060,9 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [formTitle, setFormTitle] = useState(reusedFormData?.title || 'Untitled Form');
   const [formDescription, setFormDescription] = useState(reusedFormData?.description || '');
-  const [formStyle, setFormStyle] = useState<FormStyle>(reusedFormData?.style || {
+
+  // Update the defaultFormStyle with all required properties
+  const defaultFormStyle: FormStyle = {
     width: 'medium',
     alignment: 'left',
     spacing: 'comfortable',
@@ -1070,9 +1072,25 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
     borderColor: '#e5e7eb',
     fontFamily: 'Inter',
     headingFontSize: '1.5rem',
-    bodyFontSize: '1rem'
+    bodyFontSize: '1rem',
+    borderRadius: 'md' // Add default border radius
+  };
+
+  // Update the formStyle state initialization
+  const [formStyle, setFormStyle] = useState<FormStyle>(() => {
+    if (reusedFormData?.style) {
+      return {
+        ...defaultFormStyle,
+        ...reusedFormData.style,
+        // Ensure required properties have default values
+        width: reusedFormData.style.width || defaultFormStyle.width,
+        alignment: reusedFormData.style.alignment || defaultFormStyle.alignment,
+        spacing: reusedFormData.style.spacing || defaultFormStyle.spacing,
+        borderRadius: reusedFormData.style.borderRadius || defaultFormStyle.borderRadius
+      };
+    }
+    return defaultFormStyle;
   });
-  const [bodyFontSize, setBodyFontSize] = useState(formStyle.bodyFontSize);
 
   // New state for adding a field via modal
   const [isNewFieldModalOpen, setIsNewFieldModalOpen] = useState(false);
@@ -1107,17 +1125,21 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
    * Updates field positions and dimensions based on grid changes
    */
   const onLayoutChange = (layout: Layout[]) => {
-    // Update field positions and dimensions based on layout changes
-    setFields(currentFields => {
-      return currentFields.map(field => {
-        const layoutItem = layout.find(item => item.i === field.id);
-        if (layoutItem) {
-          // Update the field with new layout properties from react-grid-layout
-          return { ...field, ...layoutItem };
-        }
-        return field;
-      });
+    // Update field positions based on layout changes
+    const updatedFields = fields.map(field => {
+      const layoutItem = layout.find(item => item.i === field.id);
+      if (layoutItem) {
+        return {
+          ...field,
+          x: layoutItem.x,
+          y: layoutItem.y,
+          w: layoutItem.w,
+          h: layoutItem.h,
+        };
+      }
+      return field;
     });
+    setFields(updatedFields);
   };
 
   /**
@@ -1145,7 +1167,7 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
   };
 
   /**
-   * Handles saving field details from the modal
+   * Handles field saving from the modal
    * Updates or adds a field based on the provided data
    */
   const handleSaveFieldDetails = (updatedFieldData: Partial<GridFormField>) => {
@@ -1170,8 +1192,7 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
       // We are adding a new field
       const newFieldId = `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const defaultHeight = fieldTypeDefaultHeight[newFieldType] || GRID_CONFIG.defaultFieldHeight;
-      const fieldTypeConfig = fieldTypes.find(ft => ft.type === newFieldType);
-      const defaultWidth = fieldTypeConfig?.defaultWidth || GRID_CONFIG.minFieldWidth;
+      const defaultWidth = GRID_CONFIG.minFieldWidth;
 
       const fieldToAdd: GridFormField = {
         ...updatedFieldData as Omit<GridFormField, 'i' | 'x' | 'y' | 'w' | 'h'>, // Cast to include required FormField properties
@@ -1241,15 +1262,15 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
           // Include all non-submit fields
           ...fields
             .filter(field => field.type !== 'SUBMIT')
-            .map(field => ({
+            .map((field): FormField => ({
               id: field.id,
               type: field.type,
-              question: field.question.trim(),
+              question: field.question,
               required: Boolean(field.required),
               options: Array.isArray(field.options) 
                 ? field.options.map(opt => String(opt).trim()).filter(Boolean)
                 : [],
-              description: field.description ?? null,
+              description: field.description || undefined,
               gridPosition: {
                 x: field.x,
                 y: field.y,
@@ -1263,14 +1284,14 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
             type: 'SUBMIT',
             question: 'Submit',
             required: false,
-            description: null,
+            description: undefined,
             gridPosition: {
               x: 0,
               y: Math.max(...fields.map(f => f.y + f.h), 0), // Position at the bottom
               width: 4,
               height: 1
             }
-          }
+          } as FormField
         ],
         style: {
           ...formStyle,
@@ -1323,7 +1344,7 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
         let errorMessage = 'Error saving form';
         if (data?.details) {
           if (Array.isArray(data.details)) {
-            errorMessage = data.details.map((err: any) => 
+            errorMessage = data.details.map((err: { path?: string; message?: string }) => 
               typeof err === 'string' ? err : 
               `${err.path || 'field'}: ${err.message || 'Invalid value'}`
             ).join('\n');
@@ -1593,6 +1614,15 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
                     id: 'preview', 
                     title: formTitle || dict.untitledForm, 
                     description: formDescription,
+                    fields: fields.map(field => ({
+                      id: field.id,
+                      type: field.type,
+                      question: field.question,
+                      required: field.required,
+                      options: field.options,
+                      description: field.description || undefined,
+                      gridPosition: { x: field.x, y: field.y, width: field.w, height: field.h },
+                    })),
                     style: {
                       width: formStyle.width,
                       alignment: formStyle.alignment,
@@ -1615,15 +1645,6 @@ export function GridFormBuilder({ dict }: GridFormBuilderProps) {
                       text: footerConfig.text,
                     } : undefined,
                   }} 
-                  fields={fields.map(field => ({
-                    id: field.id,
-                    type: field.type,
-                    question: field.question,
-                    required: field.required,
-                    options: field.options,
-                    description: field.description ?? null,
-                    gridPosition: { x: field.x, y: field.y, width: field.w, height: field.h },
-                  }))}
                 />
               </div>
             </CardContent>

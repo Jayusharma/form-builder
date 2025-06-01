@@ -1,15 +1,23 @@
 import { Metadata } from "next";
 import { LogsViewer } from "@/components/logs/LogsViewer";
 import { getDictionary } from "@/lib/dictionary";
+import { Locale } from "@/lib/i18n-config";
 
-export interface PageProps {
-  params: Promise<{ locale: string }>;
+type PageProps = {
+  params: Promise<{ locale: Locale }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const resolvedParams = await params;
-  const dict = await getDictionary(resolvedParams.locale === 'es' ? 'es' : 'en');
+export async function generateStaticParams() {
+  return [
+    { locale: 'en' },
+    { locale: 'es' }
+  ];
+}
+
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
+  const dict = await getDictionary(params.locale);
   
   return {
     title: dict.logs.metadata.title,
@@ -17,13 +25,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function LogsPage({ params, searchParams }: PageProps) {
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
-  const dict = await getDictionary(resolvedParams.locale === 'es' ? 'es' : 'en');
+export default async function LogsPage(props: PageProps) {
+  const params = await props.params;
+  const dict = await getDictionary(params.locale);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{dict.logs.title}</h1>
           <p className="text-muted-foreground">

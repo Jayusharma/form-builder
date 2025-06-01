@@ -8,7 +8,7 @@ export interface PageProps {
 }
 
 export default async function Page({ params, searchParams }: PageProps) {
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
+  const [resolvedParams] = await Promise.all([params, searchParams]);
   const dict = await getDictionary(resolvedParams.locale);
   return <GridFormBuilder dict={dict.formBuilder} />;
 } 

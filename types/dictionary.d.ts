@@ -519,6 +519,8 @@ export interface Dictionary {
       };
       actions: {
         review: string;
+        approve: string;
+        reject: string;
       };
     };
     notifications: {

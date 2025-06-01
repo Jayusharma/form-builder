@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { i18n } from '@/lib/i18n-config';
 import type { Locale } from '@/lib/i18n-config';
 import { getClientDictionary } from '@/lib/client-dictionary';
+import type { Dictionary } from '@/types/dictionary';
 
 export default function NotFound() {
   const router = useRouter();
   const pathname = usePathname();
-  const [dictionary, setDictionary] = useState<any>(null);
+  const [dictionary, setDictionary] = useState<Dictionary | null>(null);
 
   // Get the current locale from the pathname
   const currentLocale = pathname.split('/')[1];

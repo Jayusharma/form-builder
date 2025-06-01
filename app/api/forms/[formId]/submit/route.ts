@@ -11,17 +11,15 @@
  */
 
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { FormSubmissionSchema } from "@/lib/schemas/form";
 import { auth } from "@/auth";
-import { z } from "zod";
-import { Prisma } from "@prisma/client";
-import formLogger from "@/lib/formLogger";
+import { db } from "@/lib/db";
+import { formLogger } from "@/lib/formLogger";
 
-/**
- * Route Parameters Type
- * Defines the expected parameters for the route handler
- */
+interface FormSubmissionData {
+  formId: string;
+  responses: Record<string, string | number | boolean | string[]>;
+}
+
 type RouteParams = {
   params: Promise<{ formId: string }>;
 };
@@ -48,138 +46,66 @@ type RouteParams = {
  * - submittedAt: Timestamp of existing submission (on duplicate)
  * - submissionId: ID of existing submission (on duplicate)
  */
-export async function POST(req: Request, { params }: RouteParams) {
+export async function POST(
+  req: Request,
+  { params }: RouteParams
+) {
   try {
-    // Verify user authentication
     const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     const resolvedParams = await params;
-    const { formId } = resolvedParams;
-    const body = await req.json();
-    const { responses } = body;
+    const formId = resolvedParams.formId;
+    const data = await req.json() as FormSubmissionData;
 
-    // Validate submission data structure
-    if (!responses || typeof responses !== "object") {
-      return NextResponse.json(
-        { error: "Invalid submission data" },
-        { status: 400 }
-      );
-    }
-
-    // Verify form exists and is published, and include creator's admin codes
-    const form = await db.form.findFirst({
-      where: {
-        id: formId,
-        isPublished: true
-      },
-      include: {
-        fields: true,
-        user: {
-          include: {
-            adminCodes: true
-          }
-        }
-      }
+    // Verify form exists and is published
+    const form = await db.form.findUnique({
+      where: { id: formId },
+      include: { fields: true }
     });
 
     if (!form) {
-      return NextResponse.json(
-        { error: "Form not found or not published" },
-        { status: 404 }
-      );
+      return new NextResponse("Form not found", { status: 404 });
     }
 
-    // Check if user is connected to form creator through admin codes
-    const user = await db.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        adminCode: true
-      }
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+    if (!form.isPublished) {
+      return new NextResponse("Form is not published", { status: 400 });
     }
 
-    // Check if user is connected to form creator
-    const isConnected = form.user.adminCodes.some(adminCode => 
-      adminCode.id === user.adminCodeId
-    );
+    // Check for required fields
+    const missingRequired = form.fields
+      .filter(field => field.required)
+      .filter(field => !data.responses[field.id]);
 
-    if (!isConnected) {
-      return NextResponse.json(
-        { error: "You are not connected to the form creator" },
-        { status: 403 }
-      );
-    }
-
-    // Validate required fields are present in submission
-    const requiredFields = form.fields.filter(field => field.required);
-    const missingFields = requiredFields.filter(field => !(field.id in responses));
-    
-    if (missingFields.length > 0) {
-      return NextResponse.json(
-        { 
-          error: "Missing required fields",
-          missingFields: missingFields.map(f => f.question)
-        },
+    if (missingRequired.length > 0) {
+      return new NextResponse(
+        `Missing required fields: ${missingRequired.map(f => f.question).join(", ")}`,
         { status: 400 }
       );
     }
 
-    // Create submission (removed duplicate check since we allow multiple submissions)
+    // Verify user authentication for submission
+    if (!session?.user?.id) {
+      return new NextResponse("Authentication required to submit form", { status: 401 });
+    }
+
+    // Create submission
     const submission = await db.formSubmission.create({
       data: {
         formId,
         userId: session.user.id,
-        responses
-      },
-      include: {
-        form: {
-          include: {
-            fields: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true
-              }
-            }
-          }
-        }
+        responses: data.responses
       }
     });
 
-    // Log successful form submission
-    formLogger.logFormSubmitted({
-      formId: submission.formId,
-      userId: session.user.id,
-      formTitle: submission.form.title,
-      additionalInfo: {
-        responseCount: Object.keys(responses).length,
-        submissionId: submission.id,
-        submitterRole: session.user.role,
-        formOwner: submission.form.user.name
-      }
+    // Log submission
+    await formLogger.logFormSubmitted({
+      formId,
+      userId: session?.user?.id,
+      formTitle: form.title
     });
 
-    return NextResponse.json({ submission });
-
+    return NextResponse.json(submission);
   } catch (error) {
-    console.error("SUBMISSION_CREATE_ERROR", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("[FORM_SUBMIT]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 } 

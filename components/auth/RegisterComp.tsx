@@ -36,7 +36,8 @@ import { register } from "@/actions/register";
 import { Social } from "@/components/auth/social";
 import { BackButton } from "./BackButton";
 import { getClientDictionary } from "@/lib/client-dictionary";
-import { Locale } from "@/app/i18n.config";
+import { Locale } from "@/lib/i18n-config";
+import { Dictionary } from "@/types/dictionary";
 
 /**
  * RegisterComp Component
@@ -73,7 +74,7 @@ function RegisterComp() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
-  const [dict, setDict] = useState<any>(null);
+  const [dict, setDict] = useState<Dictionary | null>(null);
 
   // Load dictionary
   useEffect(() => {

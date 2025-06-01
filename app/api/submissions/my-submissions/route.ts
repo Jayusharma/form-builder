@@ -13,6 +13,36 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+
+// Define the type for form submission responses
+type FormResponses = Record<string, string | string[] | boolean | number>;
+
+// Define the type for submission with form details
+type SubmissionWithForm = Prisma.FormSubmissionGetPayload<{
+  include: {
+    form: {
+      select: {
+        id: true;
+        title: true;
+        description: true;
+        fields: {
+          select: {
+            id: true;
+            question: true;
+            type: true;
+            order: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// Define the type for submission with response count
+interface SubmissionWithCount extends SubmissionWithForm {
+  responseCount: number;
+}
 
 /**
  * GET /api/submissions/my-submissions
@@ -68,9 +98,9 @@ export async function GET() {
     });
 
     // Add response count to each submission
-    const submissionsWithCounts = submissions.map(submission => ({
+    const submissionsWithCounts: SubmissionWithCount[] = submissions.map(submission => ({
       ...submission,
-      responseCount: Object.keys(submission.responses as Record<string, any>).length
+      responseCount: Object.keys(submission.responses as FormResponses).length
     }));
 
     return NextResponse.json(submissionsWithCounts);

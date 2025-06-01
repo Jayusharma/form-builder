@@ -22,13 +22,13 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams, useParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import PublishedFormsList from "@/components/forms/PublishedFormsList";
 import PublicRequest from "@/components/forms/publicRequest";
 import FormResponses from "@/components/forms/FormResponses";
-import MyForms from "@/components/forms/MyForms";
+import {MyForms} from "@/components/forms/MyForms";
 import { useDictionary } from "@/hooks/useDictionary";
 
 /**
@@ -53,9 +53,8 @@ type TabValue = typeof VALID_TABS[number];
 function DashboardContent({ userName }: SuperAdminDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const params = useParams();
-  const currentTab = searchParams.get("tab") as TabValue;
   const dict = useDictionary();
+  const currentTab = searchParams.get("tab") as TabValue;
 
   useEffect(() => {
     if (!currentTab || !VALID_TABS.includes(currentTab)) {

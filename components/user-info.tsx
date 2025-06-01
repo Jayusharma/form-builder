@@ -36,7 +36,7 @@ export default function UserInfo({ user, label }: UserInfoProps) {
       setCopied(true);
       toast.success(dict.userInfo.notifications.adminCode.copySuccess);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       toast.error(dict.userInfo.notifications.adminCode.copyError);
     }
   };

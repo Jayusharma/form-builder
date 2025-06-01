@@ -7,7 +7,8 @@
  */
 
 // Import interfaces from the schema file
-import { GridPosition, FormStyle } from '@/lib/schemas/form';
+import { GridPosition, FormStyle } from '@/types/form';
+import { FormFieldType } from '@/lib/schemas/form';
 
 /**
  * Grid Position Type Guard
@@ -23,13 +24,14 @@ import { GridPosition, FormStyle } from '@/lib/schemas/form';
  * }
  */
 export function isGridPosition(value: unknown): value is GridPosition {
-  if (!value || typeof value !== 'object') return false;
-  const pos = value as any;
+  if (typeof value !== 'object' || value === null) return false;
+  
+  const position = value as Record<string, unknown>;
   return (
-    typeof pos.x === 'number' &&
-    typeof pos.y === 'number' &&
-    typeof pos.width === 'number' &&
-    typeof pos.height === 'number'
+    typeof position.x === 'number' &&
+    typeof position.y === 'number' &&
+    typeof position.width === 'number' &&
+    typeof position.height === 'number'
   );
 }
 
@@ -51,19 +53,30 @@ export function isGridPosition(value: unknown): value is GridPosition {
  * }
  */
 export function isFormStyle(value: unknown): value is FormStyle {
-  if (!value || typeof value !== 'object') return false;
-  const style = value as any;
+  if (typeof value !== 'object' || value === null) return false;
+  
+  const style = value as Record<string, unknown>;
   return (
-    typeof style.width === 'string' &&
-    typeof style.alignment === 'string' &&
-    typeof style.spacing === 'string' &&
-    typeof style.borderRadius === 'string' &&
-    typeof style.backgroundColor === 'string' &&
-    typeof style.textColor === 'string' &&
-    typeof style.primaryColor === 'string' &&
-    typeof style.borderColor === 'string' &&
     typeof style.fontFamily === 'string' &&
-    typeof style.headingFontSize === 'string' &&
-    typeof style.bodyFontSize === 'string'
+    typeof style.fontSize === 'string' &&
+    typeof style.backgroundColor === 'string' &&
+    typeof style.textColor === 'string'
   );
+}
+
+export function isFormFieldType(value: unknown): value is FormFieldType {
+  if (typeof value !== 'string') return false;
+  
+  const validTypes: FormFieldType[] = [
+    'TEXT',
+    'PARAGRAPH',
+    'MULTIPLE_CHOICE',
+    'CHECKBOX',
+    'DROPDOWN',
+    'SUBMIT',
+    'IMAGE_UPLOAD',
+    'RICH_TEXT'
+  ];
+  
+  return validTypes.includes(value as FormFieldType);
 } 

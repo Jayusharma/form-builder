@@ -13,16 +13,15 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormSubmission } from "@/lib/schemas/form";
 import { useDictionary } from "@/hooks/useDictionary";
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from "@/components/ui/table";
 
 /**
  * ExtendedForm Interface
@@ -31,11 +30,13 @@ import { useDictionary } from "@/hooks/useDictionary";
  * @interface
  * @extends {Form}
  * @property {string} userId - ID of the form creator
- * @property {FormSubmission[]} submissions - Array of form submissions
+ * @property {Object} _count - Submission count statistics
  */
 interface ExtendedForm extends Form {
   userId: string;
-  submissions: FormSubmission[];
+  _count: {
+    submissions: number;
+  };
 }
 
 /**
@@ -67,93 +68,115 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
   // Component state management
   const [forms, setForms] = useState<ExtendedForm[]>([]);
   const [selectedForm, setSelectedForm] = useState<ExtendedForm | null>(null);
+  const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
 
   /**
    * Updates the URL by removing the formId parameter
    * Maintains other query parameters (like tab) while cleaning up the URL
    */
-  const updateUrlWithoutFormId = () => {
-    const tab = searchParams.get('tab');
+  const updateUrlWithoutFormId = useCallback((params: URLSearchParams) => {
+    const tab = params.get('tab');
     const newUrl = tab ? `${pathname}?tab=${tab}` : pathname;
     router.push(newUrl as `/${string}`, { scroll: false });
-  };
+  }, [pathname, router]);
+
+  /**
+   * Fetches submissions for a selected form
+   */
+  const fetchSubmissions = useCallback(async (formId: string) => {
+    try {
+      setIsLoadingSubmissions(true);
+      const response = await fetch(`/api/forms/${formId}/submissions`);
+      if (!response.ok) throw new Error("Failed to fetch submissions");
+      const data = await response.json();
+      setSubmissions(data.submissions);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      setSubmissions([]);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  }, []);
 
   /**
    * Handles form selection from the dropdown
-   * Updates the selected form and cleans up the URL
-   * 
-   * @param {string} formId - ID of the selected form
+   * Updates the selected form and fetches its submissions
    */
-  const handleFormSelect = (formId: string) => {
+  const handleFormSelect = useCallback((formId: string) => {
     const form = forms.find((f) => f.id === formId);
     if (form) {
       setSelectedForm(form);
-      updateUrlWithoutFormId();
+      fetchSubmissions(formId);
+      updateUrlWithoutFormId(searchParams);
     }
-  };
+  }, [forms, fetchSubmissions, searchParams, updateUrlWithoutFormId]);
 
   /**
    * Effect hook for fetching and filtering forms
    * Handles role-based form access and initial form selection
    */
-  useEffect(() => {
-    const fetchForms = async () => {
-      try {
-        const response = await fetch("/api/forms");
-        if (!response.ok) throw new Error("Failed to fetch forms");
-        const data = await response.json();
-        
-        // Apply role-based filtering
-        let filteredForms = data.forms as ExtendedForm[];
-        
-        if (userRole === "ADMIN") {
-          // ADMIN can only see their own forms
-          filteredForms = data.forms.filter((form: ExtendedForm) => form.userId === session?.user?.id);
-        } else if (userRole === "MANAGER" || userRole === "SADMIN") {
-          // MANAGER and SADMIN can see all forms
-          filteredForms = data.forms;
-        }
-        
-        setForms(filteredForms);
+  const fetchForms = useCallback(async () => {
+    try {
+      const response = await fetch("/api/forms");
+      if (!response.ok) throw new Error("Failed to fetch forms");
+      const data = await response.json();
+      
+      if (!Array.isArray(data)) {
+        console.error("Expected array of forms but got:", typeof data);
+        setForms([]);
+        setIsLoading(false);
+        return;
+      }
 
-        // Handle form selection from URL or default to first form
-        const formIdFromQuery = searchParams.get('formId');
-        
-        if (formIdFromQuery) {
-          const formToSelect = filteredForms.find(form => form.id === formIdFromQuery);
-          if (formToSelect) {
-            setSelectedForm(formToSelect);
-            // Clean up URL after selection
-            setTimeout(() => {
-              updateUrlWithoutFormId();
-            }, 0);
-          } else if (filteredForms.length > 0) {
-            setSelectedForm(filteredForms[0]);
-          }
+      let filteredForms = data as ExtendedForm[];
+      
+      if (userRole === "ADMIN" && session?.user?.id) {
+        filteredForms = filteredForms.filter((form: ExtendedForm) => form.userId === session.user.id);
+      }
+      
+      setForms(filteredForms);
+
+      const formIdFromQuery = searchParams.get('formId');
+      
+      if (formIdFromQuery) {
+        const formToSelect = filteredForms.find(form => form.id === formIdFromQuery);
+        if (formToSelect) {
+          setSelectedForm(formToSelect);
+          setTimeout(() => {
+            updateUrlWithoutFormId(searchParams);
+          }, 0);
         } else if (filteredForms.length > 0) {
           setSelectedForm(filteredForms[0]);
         }
-      } catch (error) {
-        console.error("Error fetching forms:", error);
-      } finally {
-        setIsLoading(false);
+      } else if (filteredForms.length > 0) {
+        setSelectedForm(filteredForms[0]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching forms:", error);
+      setForms([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session?.user?.id, userRole, searchParams, updateUrlWithoutFormId]);
 
+  useEffect(() => {
     if (session?.user) {
       fetchForms();
     }
-  }, [session, userRole]);
+  }, [session, userRole, fetchForms]);
 
-  /**
-   * Effect hook for URL cleanup
-   * Removes formId from URL on component unmount or tab change
-   */
+  useEffect(() => {
+    if (selectedForm) {
+      fetchSubmissions(selectedForm.id);
+    }
+  }, [selectedForm, fetchSubmissions]);
+
   useEffect(() => {
     const handleRouteChange = () => {
       if (searchParams.has('formId')) {
-        updateUrlWithoutFormId();
+        updateUrlWithoutFormId(searchParams);
       }
     };
 
@@ -161,10 +184,10 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
     return () => {
       window.removeEventListener('popstate', handleRouteChange);
       if (searchParams.has('formId')) {
-        updateUrlWithoutFormId();
+        updateUrlWithoutFormId(searchParams);
       }
     };
-  }, [searchParams]);
+  }, [searchParams, updateUrlWithoutFormId]);
 
   // Loading state
   if (isLoading) {
@@ -219,7 +242,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
                     <span className="block truncate max-w-[200px]">{form.title}</span>
                   </div>
                   <Badge variant="secondary" className="shrink-0 ml-2">
-                    {getResponsesText(form.submissions.length)}
+                    {getResponsesText(form._count.submissions)}
                   </Badge>
                 </SelectItem>
               ))}
@@ -230,7 +253,11 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
 
       {/* Form Responses Display */}
       {selectedForm ? (
-        selectedForm.submissions.length > 0 ? (
+        isLoadingSubmissions ? (
+          <div className="flex items-center justify-center h-32">
+            <p>{dict.formResponses.loading}</p>
+          </div>
+        ) : submissions.length > 0 ? (
           <div className="space-y-6">
             {/* Response Header */}
             <div className="flex items-center justify-between">
@@ -238,54 +265,48 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
                 {dict.formResponses.responses.title.replace("{0}", selectedForm.title)}
               </h2>
               <Badge variant="outline">
-                {getResponsesText(selectedForm.submissions.length)}
+                {getResponsesText(submissions.length)}
               </Badge>
             </div>
 
             {/* Response List */}
-            <ScrollArea className="h-[600px] rounded-md border">
-              <div className="space-y-6 p-6">
-                {selectedForm.submissions.map((submission, index) => (
-                  <Card 
-                    key={submission.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => router.push(`/admin/responses/${submission.id}` as `/${string}`)}
-                  >
-                    {/* Submission Header */}
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">
-                          {dict.formResponses.responses.responseNumber.replace(
-                            "{0}",
-                            (selectedForm.submissions.length - index).toString()
-                          )}
-                        </CardTitle>
-                        <div className="text-sm text-gray-500">
-                          {dict.formResponses.responses.timeAgo.replace(
-                            "{0}",
-                            formatDistanceToNow(new Date(submission.createdAt))
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    {/* Submission Content */}
-                    <CardContent>
-                      <div className="space-y-2">
-                        {Object.entries(submission.responses).map(([fieldId, response]) => {
-                          const field = selectedForm.fields.find(f => f.id === fieldId);
-                          return field ? (
-                            <div key={fieldId} className="grid grid-cols-2 gap-2">
-                              <div className="font-medium">{field.question}:</div>
-                              <div>{response as string}</div>
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            <ScrollArea className="h-[500px] w-full border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">#</TableHead>
+                    {selectedForm?.fields.map((field) => (
+                      <TableHead key={field.id}>{field.question}</TableHead>
+                    ))}
+                    <TableHead className="text-right">Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {submissions.map((submission, index) => (
+                    <TableRow 
+                      key={submission.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => router.push(`/admin/responses/${submission.id}` as `/${string}`)}
+                    >
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      {selectedForm?.fields.map((field) => (
+                        <TableCell key={field.id} className="text-sm text-muted-foreground">
+                          {(() => {
+                            const value = submission.responses[field.id];
+                            if (value === null || value === undefined) return '-';
+                            if (Array.isArray(value)) return value.join(', ');
+                            if (value instanceof File) return value.name;
+                            return String(value);
+                          })()}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-sm text-muted-foreground text-right">
+                        {new Date(submission.createdAt).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </ScrollArea>
           </div>
         ) : (

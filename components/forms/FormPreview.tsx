@@ -16,31 +16,55 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { FormField, FormFieldType, FormStyle, GridPosition } from '@/lib/schemas/form';
+import { FormField, FormStyle, } from '@/lib/schemas/form';
 import { useToast } from '@/components/ui/use-toast';
 import { PrinterIcon, ImageIcon } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useDictionary } from '@/hooks/useDictionary';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 /**
  * Grid layout configuration constants
  * Defines the layout parameters for the form preview grid
  */
-const GRID_CELL_SIZE = 100; // pixels
-const GRID_COLUMNS = 12; // 12-column grid system
-const MOBILE_BREAKPOINT = 640; // sm breakpoint
+// const GRID_CELL_SIZE = 100; // pixels
+// const GRID_COLUMNS = 12; // 12-column grid system
+// const MOBILE_BREAKPOINT = 640; // sm breakpoint
+
+// Define specific types for different field values
+export type TextValue = string;
+export type ParagraphValue = string;
+export type MultipleChoiceValue = string;
+export type CheckboxValue = string[];
+export type DropdownValue = string;
+export type ImageValue = string;
+export type RichTextValue = string;
+
+// Combined type for all possible form response values
+export type FormResponseValue = TextValue | ParagraphValue | MultipleChoiceValue | CheckboxValue | DropdownValue | ImageValue | RichTextValue | null;
+
+export interface FormResponseData {
+  [key: string]: FormResponseValue;
+}
+
+/**
+ * Gets the field value with proper type handling
+ */
+function getFieldValue(value: FormResponseValue | undefined, fieldType: string): string | string[] | null {
+  if (value === undefined || value === null) {
+    return fieldType === 'CHECKBOX' ? [] : '';
+  }
+  return value;
+}
 
 /**
  * FormPreviewProps Interface
@@ -54,7 +78,7 @@ const MOBILE_BREAKPOINT = 640; // sm breakpoint
  * @property {FormStyle} [form.style] - Form styling options
  * @property {FormField[]} fields - Array of form fields
  * @property {boolean} [isPublic=false] - Whether the form is publicly accessible
- * @property {Record<string, any>} [submissionResponses] - Existing submission responses
+ * @property {FormResponseData} [submissionResponses] - Existing submission responses
  * @property {boolean} [isReadOnly=false] - Whether the form is in read-only mode
  * @property {Date} [submissionDate] - Submission date
  */
@@ -72,22 +96,22 @@ interface FormPreviewProps {
       logo?: string;
       text?: string;
     } | null;
+    fields: FormField[];
   };
-  fields: FormField[];
-  isPublic?: boolean;
-  submissionResponses?: Record<string, any>;
+  submissionResponses?: FormResponseData;
   isReadOnly?: boolean;
   submissionDate?: Date;
+  onSubmit?: (data: FormResponseData) => void;
 }
 
 /**
  * Process form style utility function
  * Handles parsing and validation of form styles with proper type assertions
  * 
- * @param {any} rawStyle - The raw style object from the database
+ * @param {unknown} rawStyle - The raw style object from the database
  * @returns {FormStyle} Processed and validated form style
  */
-function processFormStyle(rawStyle: any): FormStyle {
+function processFormStyle(rawStyle: unknown): FormStyle {
   try {
     // Try to parse the style if it's a string, otherwise use as is
     const style = typeof rawStyle === 'string' 
@@ -137,10 +161,16 @@ function processFormStyle(rawStyle: any): FormStyle {
  * @param {FormPreviewProps} props - Component props
  * @returns {JSX.Element} Rendered form preview
  */
-export function FormPreview({ form, fields, isPublic = false, submissionResponses, isReadOnly = false, submissionDate }: FormPreviewProps) {
+export function FormPreview({
+  form,
+  submissionResponses,
+  isReadOnly = false,
+  submissionDate,
+  onSubmit,
+}: FormPreviewProps) {
   // State management
   const { toast } = useToast();
-  const [responses, setResponses] = useState<Record<string, any>>(submissionResponses || {});
+  const [responses, setResponses] = useState<FormResponseData>(submissionResponses || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -156,15 +186,6 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
    * Utility functions for responsive styling
    * These functions return appropriate CSS classes based on form style settings
    */
-  const getWidthClass = () => {
-    switch (style.width) {
-      case 'small': return 'max-w-md';
-      case 'medium': return 'max-w-2xl';
-      case 'large': return 'max-w-4xl';
-      default: return 'max-w-2xl';
-    }
-  };
-
   const getAlignmentClass = () => {
     switch (style.alignment) {
       case 'left': return 'items-start text-left';
@@ -190,14 +211,15 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
   /**
    * Handles form submission
    * Validates required fields and submits form data to the server
-   * 
-   * @param {React.FormEvent} e - Form submission event
    */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event?: React.FormEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
+    
     setIsSubmitting(true);
 
-    const missingRequired = fields.filter(
+    const missingRequired = form.fields.filter(
       field => field.required && !responses[field.id]
     );
 
@@ -212,14 +234,26 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
     }
 
     try {
+      if (onSubmit) {
+        onSubmit(responses);
+        return;
+      }
+
       const response = await fetch(`/api/forms/${form.id}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          formId: form.id,
-          responses,
+        body: JSON.stringify({ 
+          responses: Object.entries(responses).map(([fieldId, value]) => {
+            const field = form.fields.find(f => f.id === fieldId);
+            return {
+              fieldId,
+              value,
+              question: field?.question || '',
+              type: field?.type || 'TEXT'
+            };
+          })
         }),
       });
 
@@ -271,196 +305,72 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
    * Handles form printing
    * Generates a print-friendly version of the form with responses
    */
-  const handlePrint = async () => {
+  const handlePrint = () => {
     setIsPrinting(true);
+    
+    // Add print-only class to body when printing
+    document.body.classList.add('printing');
+    
     try {
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        throw new Error('Pop-up blocked. Please allow pop-ups for this site.');
-      }
-
-      // Get the form element
-      const formElement = document.getElementById('form-to-print');
-      if (!formElement) {
-        throw new Error('Form element not found');
-      }
-
-      // Get all stylesheets from the current document
-      const stylesheets = Array.from(document.styleSheets);
-      const styleRules = stylesheets.map(sheet => {
-        try {
-          return Array.from(sheet.cssRules)
-            .map(rule => rule.cssText)
-            .join('\n');
-        } catch (e) {
-          // Skip external stylesheets that we can't access
-          return '';
-        }
-      }).join('\n');
-
-      // Get the form's HTML
-      const formHTML = formElement.innerHTML;
-
-      // Create the print document
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${form.title || 'Form Response'}</title>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <!-- Include Tailwind CSS -->
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            /* Include all styles from the current page */
-            ${styleRules}
-
-            /* Print-specific styles */
-            @media print {
-              /* Set page margins */
-              @page {
-                margin: 1.5cm;  /* 1.5cm margins on all sides */
-                size: auto;
-              }
-              
-              /* Hide browser-added elements */
-              body::before,
-              body::after {
-                display: none !important;
-              }
-
-              /* Remove date and page numbers */
-              @page :first {
-                margin-top: 1.5cm;  /* Consistent top margin */
-              }
-              
-              /* Ensure colors and backgrounds print */
-              body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                margin: 0;
-                padding: 0;
-              }
-
-              /* Keep form fields together */
-              .form-field {
-                break-inside: avoid;
-                page-break-inside: avoid;
-              }
-
-              /* Hide print button */
-              .print-button {
-                display: none !important;
-              }
-
-              /* Add some padding to the form container */
-              #form-to-print {
-                margin: 0 !important;
-                padding: 1rem !important;  /* Add some internal padding */
-                width: 100% !important;
-                max-width: none !important;
-              }
-
-              /* Ensure the form takes up the full width while respecting margins */
-              .w-\\[800px\\] {
-                width: 100% !important;
-                max-width: none !important;
-                margin: 0 auto !important;  /* Center the form */
-              }
-
-              /* Add some spacing between form elements */
-              .form-field {
-                margin-bottom: 1rem !important;
-              }
-
-              /* Ensure proper spacing for the header and footer */
-              .border-b, .border-t {
-                padding: 1rem !important;
-                margin: 0 !important;
-              }
-            }
-          </style>
-        </head>
-        <body class="bg-white">
-          <div class="w-full flex justify-center">
-            <div class="w-[800px] max-w-full">
-              <!-- Print button (hidden when printing) -->
-              <div class="print-button flex justify-end mb-2">
-                <button 
-                  onclick="window.print()"
-                  class="inline-flex items-center gap-2 h-8 px-3 py-2 text-sm font-medium rounded-none border-0 focus:ring-0 hover:bg-transparent"
-                >
-                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
-                  </svg>
-                  Print
-                </button>
-              </div>
-              <!-- Form content -->
-              ${formHTML}
-            </div>
-          </div>
-          <script>
-            // Auto-print when the page loads
-            window.onload = function() {
-              setTimeout(() => {
-                window.print();
-              }, 500);
-            };
-          </script>
-        </body>
-        </html>
-      `);
-
-      printWindow.document.close();
-
-      toast({
-        title: dict.formPreview.print.dialogOpened,
-        description: dict.formPreview.print.ready,
-      });
-    } catch (error) {
-      console.error('Print error:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : dict.formPreview.print.error,
-        variant: "destructive",
-      });
+      window.print();
     } finally {
+      // Remove print-only class after printing
+      document.body.classList.remove('printing');
       setIsPrinting(false);
     }
   };
   
-  /**
-   * Formats field values for display
-   * Handles different field types and formats values appropriately
-   * 
-   * @param {FormField} field - Form field
-   * @param {any} value - Field value to format
-   * @returns {string} Formatted field value
-   */
-  const formatFieldValue = (field: FormField, value: any) => {
-    if (value === undefined || value === null) {
-      return 'N/A';
-    }
+  // Add useEffect to inject print styles
+  useEffect(() => {
+    // Create style element for print media
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @media print {
+        /* Hide everything except the form */
+        body * {
+          visibility: hidden;
+        }
+        
+        /* Show only form content */
+        #form-to-print,
+        #form-to-print * {
+          visibility: visible;
+        }
+        
+        /* Position form at the top of the page */
+        #form-to-print {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+        }
+        
+        /* Hide print button when printing */
+        .print-button {
+          display: none !important;
+        }
+        
+        /* Remove background colors and shadows for better printing */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `;
     
-    if (Array.isArray(value)) {
-      return value.join(', ');
-    }
+    // Add style to document head
+    document.head.appendChild(style);
     
-    // For paragraph text, preserve line breaks
-    if (field.type === 'PARAGRAPH') {
-      return value.replace(/\n/g, '<br/>');
-    }
-    
-    return String(value);
-  };
-
-  // Determine if submit button should be rendered
-  const renderSubmitButton = !isReadOnly && fields.some(field => field.type === 'SUBMIT');
+    // Cleanup function
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Filter fields for rendering (exclude submit button in read-only mode)
-  const fieldsToRender = isReadOnly ? fields.filter(field => field.type !== 'SUBMIT') : fields;
+  const fieldsToRender = isReadOnly ? form.fields.filter(field => field.type !== 'SUBMIT') : form.fields;
 
   /**
    * Renders a form field based on its type
@@ -597,7 +507,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
               </div>
             ) : (
               <RadioGroup
-                value={fieldValue || ''}
+                value={getFieldValue(fieldValue, 'RADIO') as string}
                 onValueChange={(value) => setResponses(prev => ({ ...prev, [field.id]: value }))}
                 required={field.required}
                 className="flex flex-wrap gap-4"
@@ -687,7 +597,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
               </div>
             ) : (
               <Select
-                value={fieldValue || ''}
+                value={getFieldValue(fieldValue, 'SELECT') as string}
                 onValueChange={(value) => setResponses(prev => ({ ...prev, [field.id]: value }))}
                 required={field.required}
               >
@@ -738,10 +648,12 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
             {isReadOnly ? (
               <div className="p-2 bg-gray-50/50" style={{ fontFamily: style.fontFamily }}>
                 {fieldValue ? (
-                  <img 
-                    src={fieldValue} 
+                  <Image 
+                    src={getFieldValue(fieldValue, 'IMAGE') as string} 
                     alt="Uploaded image" 
-                    className="max-w-full h-auto rounded-none"
+                    width={200} 
+                    height={200}
+                    className="max-w-full object-contain rounded-lg"
                   />
                 ) : (
                   dict.formPreview.imageUpload.noImage
@@ -756,9 +668,11 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
                   <div className="flex flex-col items-center justify-center gap-2">
                     {fieldValue ? (
                       <>
-                        <img 
-                          src={fieldValue} 
+                        <Image 
+                          src={getFieldValue(fieldValue, 'IMAGE') as string} 
                           alt="Preview" 
+                          width={200} 
+                          height={200}
                           className="max-w-full h-32 object-contain rounded-none mb-2"
                         />
                         <Button
@@ -881,21 +795,13 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
           <div className="flex justify-end mt-4">
             <Button
               type="submit"
-              disabled={isSubmitting}
-              className="min-w-[100px] h-8 rounded-none border-0 focus:ring-0"
-              style={{
-                backgroundColor: style.primaryColor,
-                color: '#ffffff',
-                fontFamily: style.fontFamily,
-              }}
-            >
-              {field.question || dict.formPreview.buttons.submit}
-              {isSubmitting && (
-                <span 
-                  className="ml-2 w-4 h-4 border-2 border-white border-t-transparent rounded-none animate-spin" 
-                  style={{ borderColor: '#ffffff' }}
-                />
+              className={cn(
+                "mt-6",
+                form.style?.primaryColor && `bg-[${form.style.primaryColor}]`
               )}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? dict.formPreview.buttons.preparing : dict.formPreview.buttons.submit}
             </Button>
           </div>
         );
@@ -909,7 +815,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
     <div className="w-full flex justify-center">
       <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full">
         {isReadOnly && (
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-end mb-2 print-button">
             <Button
               onClick={handlePrint}
               disabled={isPrinting}
@@ -931,9 +837,11 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
             <div className="border-b border-border p-4 flex items-center gap-4">
               {form.header.logo && (
                 <div className="flex-shrink-0">
-                  <img
+                  <Image
                     src={form.header.logo}
                     alt="Header Logo"
+                    width={48}
+                    height={48}
                     className="h-12 w-auto object-contain"
                   />
                 </div>
@@ -952,7 +860,7 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
             onSubmit={(e) => {
               e.preventDefault();
               if (!isReadOnly && !isSubmitted) {
-                handleSubmit(e);
+                handleSubmit();
               }
             }}
             className={`
@@ -1043,7 +951,15 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
 
           <div className="flex justify-center">
             <div className="text-[10px] opacity-40 text-center" style={{ color: style.textColor }}>
-              {form.id} • {isReadOnly && submissionDate && submissionDate.toLocaleString()}
+              {form.id} • {isReadOnly && submissionDate && new Date(submissionDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+              })}
             </div>
           </div>
 
@@ -1051,9 +967,11 @@ export function FormPreview({ form, fields, isPublic = false, submissionResponse
             <div className="border-t border-border p-4 flex items-center gap-4">
               {form.footer.logo && (
                 <div className="flex-shrink-0">
-                  <img
+                  <Image
                     src={form.footer.logo}
                     alt="Footer Logo"
+                    width={48}
+                    height={48}
                     className="h-12 w-auto object-contain"
                   />
                 </div>

@@ -41,6 +41,7 @@ import { useDictionary } from "@/hooks/useDictionary";
  * @property {string} title - Form title
  * @property {string|null} description - Form description
  * @property {Date} updatedAt - Last update timestamp
+ * @property {Date} createdAt - Form creation timestamp
  * @property {string} userId - Creator's user ID
  * @property {boolean} isPublished - Form publication status
  * @property {Object} user - Form creator information
@@ -54,6 +55,7 @@ interface Form {
   title: string;
   description: string | null;
   updatedAt: Date;
+  createdAt: Date;
   userId: string;
   isPublished: boolean;
   user: {
@@ -105,11 +107,13 @@ interface Form {
  * @property {Form} form - The form object to manage
  * @property {boolean} [showReuse=true] - Whether to show the reuse option
  * @property {Function} [onFormUpdate] - Callback when form is updated
+ * @property {Function} [onReuseForm] - Callback when form is reused
  */
 interface FormActionsMenuProps {
   form: Form;
   showReuse?: boolean;
   onFormUpdate?: (updatedForm: Form) => void;
+  onReuseForm?: (form: Form) => void;
 }
 
 /**
@@ -119,7 +123,7 @@ interface FormActionsMenuProps {
  * @param {FormActionsMenuProps} props - Component props
  * @returns {JSX.Element} Rendered dropdown menu with form actions
  */
-export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormActionsMenuProps) {
+export function FormActionsMenu({ form, showReuse = true, onFormUpdate, onReuseForm }: FormActionsMenuProps) {
   // Router and session setup
   const router = useRouter();
   const { data: session } = useSession();
@@ -137,6 +141,11 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate }: FormAc
    * @param {Form} form - Form to be reused as template
    */
   const handleReuseForm = (form: Form) => {
+    if (onReuseForm) {
+      onReuseForm(form);
+      return;
+    }
+
     const formData = encodeURIComponent(JSON.stringify({
       title: form.title,
       description: form.description,

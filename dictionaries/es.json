@@ -641,7 +641,9 @@
         "pending": "PENDIENTE"
       },
       "actions": {
-        "review": "Revisar"
+        "review": "Revisar",
+        "approve": "Aprobar",
+        "reject": "Rechazar"
       }
     },
     "notifications": {

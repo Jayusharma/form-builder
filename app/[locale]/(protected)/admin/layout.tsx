@@ -3,9 +3,7 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/ui/navbar-component';
 import { Shield } from 'lucide-react';
-import { UserRole } from '@prisma/client';
 
 export default function AdminLayout({
   children,

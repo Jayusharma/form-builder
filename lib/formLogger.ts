@@ -5,8 +5,6 @@
  * It uses the base logger to record form activities with appropriate log levels and formatting.
  */
 
-import logger from './logger';
-
 /**
  * Form Event Types
  * Defines all possible form-related events that can be logged
@@ -29,8 +27,10 @@ interface FormLogData {
   formId: string;                    // Unique identifier of the form
   userId?: string;                   // ID of the user performing the action
   formTitle?: string;                // Title of the form
-  additionalInfo?: Record<string, any>; // Any additional context-specific information
+  additionalInfo?: Record<string, unknown>; // Any additional context-specific information
 }
+
+export type LogLevel = 'info' | 'warning' | 'error';
 
 /**
  * Form Logger Object
@@ -60,23 +60,23 @@ export const formLogger = {
       case 'FORM_MADE_PRIVATE':
       case 'FORM_MADE_PUBLIC':
       case 'FORM_SHARED':
-        logger.info(`Form Event: ${JSON.stringify(message)}`);
+        formLogger.info(`Form Event: ${JSON.stringify(message)}`);
         break;
       
       case 'FORM_SUBMITTED':
-        logger.info(`Form Submission: ${JSON.stringify(message)}`);
+        formLogger.info(`Form Submission: ${JSON.stringify(message)}`);
         break;
       
       case 'FORM_DELETED':
-        logger.warn(`Form Deleted: ${JSON.stringify(message)}`);
+        formLogger.warning(`Form Deleted: ${JSON.stringify(message)}`);
         break;
       
       case 'FORM_RESPONSE_VIEWED':
-        logger.debug(`Form Response Viewed: ${JSON.stringify(message)}`);
+        formLogger.debug(`Form Response Viewed: ${JSON.stringify(message)}`);
         break;
       
       default:
-        logger.info(`Form Event: ${JSON.stringify(message)}`);
+        formLogger.info(`Form Event: ${JSON.stringify(message)}`);
     }
   },
 
@@ -134,6 +134,52 @@ export const formLogger = {
    */
   logFormResponseViewed: (data: FormLogData) => {
     formLogger.logFormEvent('FORM_RESPONSE_VIEWED', data);
+  },
+
+  async log(
+    level: LogLevel,
+    message: string,
+    metadata: Record<string, unknown> = {},
+    userId?: string
+  ) {
+    try {
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        level,
+        message,
+        metadata,
+        userId,
+      };
+
+      switch (level) {
+        case 'warning':
+          console.warn(JSON.stringify(logEntry, null, 2));
+          break;
+        case 'error':
+          console.error(JSON.stringify(logEntry, null, 2));
+          break;
+        default:
+          console.log(JSON.stringify(logEntry, null, 2));
+      }
+    } catch (error) {
+      console.error('Failed to write log:', error);
+    }
+  },
+
+  info(message: string, metadata: Record<string, unknown> = {}, userId?: string) {
+    return this.log('info', message, metadata, userId);
+  },
+
+  warning(message: string, metadata: Record<string, unknown> = {}, userId?: string) {
+    return this.log('warning', message, metadata, userId);
+  },
+
+  error(message: string, metadata: Record<string, unknown> = {}, userId?: string) {
+    return this.log('error', message, metadata, userId);
+  },
+
+  debug(message: string, metadata: Record<string, unknown> = {}, userId?: string) {
+    return this.log('info', message, metadata, userId);
   },
 };
 

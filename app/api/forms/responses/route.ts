@@ -13,8 +13,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/auth';
-import { Form, FormSubmission, FormField } from '@/lib/schemas/form';
-import { isGridPosition, isFormStyle } from '@/lib/utils/typeGuards';
+
+interface FormResponse {
+  id: string;
+  formId: string;
+  responses: Record<string, string | number | boolean | string[]>;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * GET /api/forms/responses
@@ -33,90 +39,43 @@ import { isGridPosition, isFormStyle } from '@/lib/utils/typeGuards';
  * 
  * Note: All responses are type-checked and transformed to ensure data consistency
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    // Verify user authentication
     const session = await auth();
     if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return new NextResponse("Unauthorized", { status: 403 });
     }
 
-    // Fetch user's forms with submissions and fields
-    const forms = await db.form.findMany({
+    const { searchParams } = new URL(req.url);
+    const formId = searchParams.get("formId");
+
+    if (!formId) {
+      return new NextResponse("Form ID is required", { status: 400 });
+    }
+
+    const submissions = await db.formSubmission.findMany({
       where: {
-        userId: session.user.id,
-      },
-      include: {
-        submissions: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        fields: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+        formId,
+        form: {
+          OR: [
+            { userId: session.user.id },
+            { isPublished: true }
+          ]
+        }
+      }
     });
 
-    // Transform and type-check form data
-    const typedForms: Form[] = forms.map(form => ({
-      ...form,
-      // Transform submissions with type checking
-      submissions: form.submissions.map(submission => ({
-        ...submission,
-        submittedAt: submission.createdAt,
-        responses: (submission.responses && typeof submission.responses === 'object' && !Array.isArray(submission.responses))
-          ? submission.responses as Record<string, any>
-          : {},
-        formId: submission.formId,
-        id: submission.id,
-        createdAt: submission.createdAt,
-        updatedAt: submission.updatedAt,
-      })) as FormSubmission[],
-      // Transform fields with type checking and default grid positions
-      fields: form.fields.map(field => ({
-        ...field,
-        gridPosition: isGridPosition(field.gridPosition)
-          ? field.gridPosition
-          : { x: 0, y: 0, width: 12, height: 1 },
-        options: field.options as string[],
-        type: field.type,
-        id: field.id,
-        question: field.question,
-        required: field.required,
-      })) as FormField[],
-      // Set default values for optional fields
-      description: form.description || '',
-      // Apply default form style if not set
-      style: isFormStyle(form.style) ? form.style : {
-        width: 'medium',
-        alignment: 'center',
-        spacing: 'comfortable',
-        borderRadius: 'md',
-        backgroundColor: '#ffffff',
-        textColor: '#000000',
-        primaryColor: '#2563eb',
-        borderColor: '#e5e7eb',
-        fontFamily: 'inter',
-        headingFontSize: '2xl',
-        bodyFontSize: 'base',
-      },
-      createdAt: form.createdAt,
-      updatedAt: form.updatedAt,
-      userId: form.userId,
-      isPublished: form.isPublished,
-      title: form.title,
-      id: form.id,
+    const formattedResponses: FormResponse[] = submissions.map(submission => ({
+      id: submission.id,
+      formId: submission.formId,
+      responses: submission.responses as Record<string, string | number | boolean | string[]>,
+      createdAt: submission.createdAt,
+      updatedAt: submission.updatedAt
     }));
 
-    return NextResponse.json(typedForms);
+    return NextResponse.json(formattedResponses);
   } catch (error) {
-    console.error('Error fetching form responses:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error("[FORM_RESPONSES]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 } 

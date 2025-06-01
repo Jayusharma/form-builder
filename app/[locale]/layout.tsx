@@ -22,13 +22,12 @@ export const metadata: Metadata = {
   description: "Form Builder",
 };
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
+type LayoutProps = {
   children: React.ReactNode;
   params: { locale: string };
-}) {
+}
+
+export default async function LocaleLayout({ children }: LayoutProps) {
   const session = await auth();
 
   return (

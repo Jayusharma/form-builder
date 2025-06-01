@@ -127,12 +127,10 @@ export async function PATCH(
 
       // Only generate new code if user doesn't already have one
       if (!existingUser?.adminCodes?.length) {
-        const code = generateAdminCode();
         adminCode = await db.adminCode.create({
           data: {
-            code,
+            code: generateAdminCode(),
             adminId: userId,
-            // Add any other required fields here if needed
           }
         });
       }
@@ -161,7 +159,10 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json({ user: updatedUser });
+    return NextResponse.json({ 
+      user: updatedUser,
+      adminCode: adminCode?.code // Include the new admin code in response if generated
+    });
   } catch (error) {
     console.error("USER_UPDATE_ERROR", error);
     return new NextResponse("Internal Error", { status: 500 });

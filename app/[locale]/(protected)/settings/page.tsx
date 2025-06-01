@@ -16,13 +16,11 @@ import {
   FormControl,
   FormItem,
   FormLabel,
-  FormDescription,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FormSuccess } from "@/components/form-success";
 import { FormError } from "@/components/form-error";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const Page = () => {
   const user = useCurrentUser();

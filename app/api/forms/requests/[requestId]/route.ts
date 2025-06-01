@@ -13,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import formLogger from "@/lib/formLogger";
+import { formLogger } from "@/lib/formLogger";
 
 /**
  * Route Parameters Type
@@ -45,76 +45,49 @@ type RouteParams = {
  */
 export async function PATCH(req: Request, { params }: RouteParams) {
   try {
-    // Verify user authentication
     const session = await auth();
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse("Unauthorized", { status: 403 });
     }
 
+    const { accepted } = await req.json();
     const resolvedParams = await params;
     const { requestId } = resolvedParams;
-    const body = await req.json();
-    const { accepted } = body;
 
-    // Validate request data
-    if (typeof accepted !== "boolean") {
-      return new NextResponse("Invalid request data", { status: 400 });
-    }
-
-    // Fetch request with form and user details
     const request = await db.publicRequest.findUnique({
       where: { id: requestId },
-      include: {
-        form: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                role: true
-              }
-            }
-          }
-        }
-      }
+      include: { form: true }
     });
 
     if (!request) {
       return new NextResponse("Request not found", { status: 404 });
     }
 
-    // Verify user has permission to update request
-    const canUpdateRequest = 
-      session.user.role === "SADMIN" || // SADMIN can update all requests
-      request.form.userId === session.user.id; // Form owner can update requests for their form
-
-    if (!canUpdateRequest) {
-      return new NextResponse("Forbidden", { status: 403 });
+    // Only form owner can update request status
+    if (request.form.userId !== session.user.id) {
+      return new NextResponse("Unauthorized", { status: 403 });
     }
 
-    // Update request status
     const updatedRequest = await db.publicRequest.update({
       where: { id: requestId },
-      data: {
-        accepted
-      },
-      include: {
-        form: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true
-              }
-            }
-          }
-        }
+      data: { accepted },
+      include: { form: true }
+    });
+
+    // Log the request status change
+    await formLogger.info(`Form request status updated to ${accepted}`, {
+      formId: request.formId,
+      userId: session.user.id,
+      metadata: {
+        requestId,
+        oldStatus: request.accepted,
+        newStatus: accepted
       }
     });
-    return NextResponse.json({ request: updatedRequest });
+
+    return NextResponse.json(updatedRequest);
   } catch (error) {
-    console.error("REQUEST_UPDATE_ERROR", error);
+    console.error("[REQUEST_UPDATE]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

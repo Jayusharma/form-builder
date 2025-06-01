@@ -1,14 +1,14 @@
 import { getDictionary } from '@/lib/dictionary'
 import { Locale } from '@/lib/i18n-config'
 
-export interface PageProps {
+type PageProps = {
   params: Promise<{ locale: Locale }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function Home({ params, searchParams }: PageProps) {
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
-  const dict = await getDictionary(resolvedParams.locale);
+export default async function Home(props: PageProps) {
+  const params = await props.params;
+  const dict = await getDictionary(params.locale);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">

@@ -38,7 +38,8 @@ import { Social } from "@/components/auth/social";
 import { BackButton } from "./BackButton";
 import Link from "next/link";
 import { getClientDictionary } from "@/lib/client-dictionary";
-import { Locale } from "@/app/i18n.config";
+import { Locale } from "@/lib/i18n-config";
+import { Dictionary } from "@/types/dictionary";
 
 /**
  * LoginComp Component
@@ -83,7 +84,7 @@ function LoginComp() {
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
   const [showTwoFactor, setShowTwoFactor] = useState(false);
-  const [dict, setDict] = useState<any>(null);
+  const [dict, setDict] = useState<Dictionary | null>(null);
 
   // Load dictionary
   useEffect(() => {

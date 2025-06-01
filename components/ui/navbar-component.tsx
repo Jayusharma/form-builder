@@ -6,18 +6,13 @@ import {
   User, 
   LogOut, 
   Menu, 
-  X, 
   Home, 
   Users, 
-  FileText, 
   Settings, 
   Shield, 
-  PieChart, 
-  Bell,
   Moon,
   FileClock,
   Sun,
-  Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,7 +26,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useDictionary } from '@/hooks/useDictionary';
@@ -100,9 +94,7 @@ const navigationItems: NavigationItems = {
 
 export default function Navbar({ role }: NavbarProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
@@ -118,7 +110,6 @@ export default function Navbar({ role }: NavbarProps) {
         email: session?.user?.email || '',
         role: role.toUpperCase() as UserRole,
       });
-      setIsLoading(false);
     } else {
       // Fall back to fetching user data if role wasn't provided
       const fetchUser = async () => {
@@ -140,8 +131,6 @@ export default function Navbar({ role }: NavbarProps) {
         } catch (error) {
           console.error('Failed to fetch user data:', error);
           setUserData(null);
-        } finally {
-          setIsLoading(false);
         }
       };
 

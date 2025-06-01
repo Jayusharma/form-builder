@@ -11,13 +11,12 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useDictionary } from "@/hooks/useDictionary";
-import { redirect } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -48,26 +47,18 @@ interface User {
  */
 export default function SearchPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const pathname = usePathname();
+  const { data: session, status } = useSession();
   const dict = useDictionary();
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Check user role and fetch initial data
-  useEffect(() => {
-    if (!session?.user || session.user.role !== "SADMIN") {
-      redirect("/");
-    } else {
-      fetchAllUsers();
-    }
-  }, [session]);
-
   /**
    * Fetches all users from the API
    * Updates the users state with the results
    */
-  const fetchAllUsers = async () => {
+  const fetchAllUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/search');
@@ -79,9 +70,24 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dict.search.errors.fetchFailed]);
+
+  // Check user role and fetch initial data
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session?.user || session.user.role !== "SADMIN") {
+      router.push("/");
+    } else {
+      fetchAllUsers();
+    }
+  }, [session, status, router, fetchAllUsers]);
 
   // Prevent rendering if user is not a super admin
+  if (status === "loading") {
+    return <p className="text-center">{dict.search.states.loading}</p>;
+  }
+
   if (!session?.user || session.user.role !== "SADMIN") {
     return null;
   }
@@ -118,7 +124,9 @@ export default function SearchPage() {
   };
 
   const handleUserClick = (userId: string) => {
-    redirect(`/users/${userId}`);
+    // Extract locale from the current pathname
+    const locale = pathname.split('/')[1];
+    router.push(`/${locale}/users/${userId}`);
   };
 
   return (

@@ -647,7 +647,9 @@
         "pending": "PENDING"
       },
       "actions": {
-        "review": "Review"
+        "review": "Review",
+        "approve": "Approve",
+        "reject": "Reject"
       }
     },
     "notifications": {

@@ -182,7 +182,7 @@ export interface FormField {
   question: string;
   required: boolean;
   options?: string[];
-  description: string | null;
+  description?: string;
   gridPosition: GridPosition;
 }
 
@@ -217,7 +217,7 @@ export interface Form {
   style: FormStyle;
   createdAt: Date;
   updatedAt: Date;
-  isPublished: Boolean;
+  isPublished: boolean;
 }
 
 /**
@@ -226,8 +226,17 @@ export interface Form {
  */
 export interface FormResponse {
   formId: string;
-  responses: Record<string, any>;
+  responses: Record<string, FormFieldValue>;
   submittedAt: Date;
+}
+
+/**
+ * Answer Interface
+ * Defines the structure of an answer to a form field
+ */
+export interface Answer {
+  fieldId: string;
+  value: string | number | boolean | null;
 }
 
 /**
@@ -237,6 +246,9 @@ export interface FormResponse {
 export interface FormSubmission extends FormResponse {
   id: string;
   formId: string;
+  answers: Answer[];
   createdAt: Date;
   updatedAt: Date;
-} 
+}
+
+export type FormFieldValue = string | number | boolean | null | File; 

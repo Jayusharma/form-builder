@@ -24,7 +24,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import PublishedFormsList from "@/components/forms/PublishedFormsList";
 import FormResponses from "@/components/forms/FormResponses";
-import MyForms from "@/components/forms/MyForms";
 import { useDictionary } from "@/hooks/useDictionary";
 
 /**

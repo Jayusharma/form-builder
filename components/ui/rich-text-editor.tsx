@@ -55,7 +55,7 @@ const PastePreserveExtension = Extension.create({
         attributes: {
           preserveWhitespace: {
             default: true,
-            parseHTML: (element: HTMLElement) => true,
+            parseHTML: () => true,
             renderHTML: () => ({ style: 'white-space: pre-wrap' }),
           },
         },

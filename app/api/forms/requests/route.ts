@@ -31,53 +31,32 @@ import { db } from "@/lib/db";
  * - Request details (id, status, timestamp)
  * - Form details with creator information
  */
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    // Verify user authentication
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return new NextResponse("Unauthorized", { status: 403 });
     }
 
-    // Build query based on user role
-    let whereClause = {};
-    if (session.user.role !== "SADMIN") {
-      // Non-SADMIN users can only see their own requests
-      whereClause = { userId: session.user.id };
-    }
-
-    // Fetch requests with form and user details
     const requests = await db.publicRequest.findMany({
-      where: whereClause,
+      where: {
+        form: {
+          userId: session.user.id
+        }
+      },
       include: {
         form: {
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true
-              }
-            }
+            user: true
           }
         }
-      },
-      orderBy: {
-        id: "desc"
       }
     });
 
     return NextResponse.json({ requests });
   } catch (error) {
-    console.error("REQUESTS_GET_ERROR", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("[FORM_REQUESTS]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 

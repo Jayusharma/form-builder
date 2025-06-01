@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -38,56 +38,60 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDictionary } from "@/hooks/useDictionary";
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * LogEntry Interface
  * Defines the structure of a log entry in the system
  */
 interface LogEntry {
+  id: string;
+  level: 'info' | 'warning' | 'error';
+  message: string;
+  metadata: Record<string, unknown>;
   timestamp: string;
-  level: "info" | "warn" | "error" | "debug";
-  event?: string;
+  event: string;
   formId?: string;
   userId?: string;
   userName?: string;
   formTitle?: string;
-  additionalInfo?: Record<string, any>;
   rawMessage?: string;
 }
 
-export function LogsViewer() {
+interface LogsViewerProps {
+  initialLogs?: LogEntry[];
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+export function LogsViewer({
+  initialLogs = [],
+  autoRefresh = false,
+  refreshInterval = 5000,
+}: LogsViewerProps) {
   const dict = useDictionary();
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<LogEntry[]>(initialLogs);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [levelFilter, setLevelFilter] = useState<'all' | 'info' | 'warning' | 'error'>('all');
   const [eventFilter, setEventFilter] = useState<string>("all");
 
-  /**
-   * Fetches logs from the API endpoint
-   * Handles loading states and error conditions
-   */
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Fetching logs...");
       
-      const response = await fetch("/api/logs");
-      console.log("Response status:", response.status);
+      const response = await fetch(`/api/logs?level=${levelFilter}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        console.error("Error response:", errorData);
         throw new Error(errorData?.error || dict.logs.errors.fetchFailed.replace("{0}", response.status.toString()));
       }
       
       const data = await response.json();
-      console.log("Received logs:", data);
       
       if (!Array.isArray(data.logs)) {
-        console.error("Invalid logs data:", data);
         throw new Error(dict.logs.errors.invalidData);
       }
       
@@ -95,15 +99,24 @@ export function LogsViewer() {
     } catch (err) {
       console.error("Error fetching logs:", err);
       setError(err instanceof Error ? err.message : dict.logs.errors.fetchFailed.replace("{0}", ""));
+      toast({
+        title: dict.logs.errors.title,
+        description: err instanceof Error ? err.message : dict.logs.errors.fetchFailed.replace("{0}", ""),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [levelFilter, dict.logs.errors]);
 
-  // Fetch logs on component mount
   useEffect(() => {
     fetchLogs();
-  }, []);
+
+    if (autoRefresh) {
+      const interval = setInterval(fetchLogs, refreshInterval);
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, refreshInterval, fetchLogs]);
 
   /**
    * Filters logs based on search query, level, and event type
@@ -126,25 +139,6 @@ export function LogsViewer() {
   });
 
   /**
-   * Returns appropriate color classes for different log levels
-   * @param level - The log level to get color for
-   */
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "error":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
-      case "warn":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
-      case "info":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100";
-      case "debug":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100";
-    }
-  };
-
-  /**
    * Formats timestamp string to a more readable format
    * @param timestamp - The timestamp string to format
    */
@@ -165,7 +159,7 @@ export function LogsViewer() {
    * Escapes special characters in CSV values
    * @param value - The value to escape for CSV format
    */
-  const escapeCsvValue = (value: any): string => {
+  const escapeCsvValue = (value: string | number | null | undefined): string => {
     if (value === null || value === undefined) return '';
     const stringValue = String(value);
     // If the value contains commas, quotes, or newlines, wrap it in quotes and escape existing quotes
@@ -220,6 +214,30 @@ export function LogsViewer() {
     }
   };
 
+  const getLevelBadgeVariant = (level: LogEntry['level']): 'default' | 'destructive' | 'secondary' => {
+    switch (level) {
+      case 'error':
+        return 'destructive';
+      case 'warning':
+        return 'secondary';
+      default:
+        return 'default';
+    }
+  };
+
+  const getLevelDisplayText = (level: LogEntry['level']): string => {
+    switch (level) {
+      case 'error':
+        return dict.logs.filters.level.error;
+      case 'warning':
+        return dict.logs.filters.level.warn;
+      case 'info':
+        return dict.logs.filters.level.info;
+      default:
+        return level;
+    }
+  };
+
   return (
     <Card className="p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
@@ -233,18 +251,17 @@ export function LogsViewer() {
               className="pl-8"
             />
           </div>
-          {/* <Select value={levelFilter} onValueChange={setLevelFilter}>
+          <Select value={levelFilter} onValueChange={(value) => setLevelFilter(value as typeof levelFilter)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={dict.logs.filters.level.title} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{dict.logs.filters.level.all}</SelectItem>
-              <SelectItem value="error">{dict.logs.filters.level.error}</SelectItem>
-              <SelectItem value="warn">{dict.logs.filters.level.warn}</SelectItem>
               <SelectItem value="info">{dict.logs.filters.level.info}</SelectItem>
-              <SelectItem value="debug">{dict.logs.filters.level.debug}</SelectItem>
+              <SelectItem value="warning">{dict.logs.filters.level.warn}</SelectItem>
+              <SelectItem value="error">{dict.logs.filters.level.error}</SelectItem>
             </SelectContent>
-          </Select> */}
+          </Select>
           <Select value={eventFilter} onValueChange={setEventFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={dict.logs.filters.event.title} />
@@ -342,8 +359,8 @@ export function LogsViewer() {
                     {formatTimestamp(log.timestamp)}
                   </TableCell>
                   <TableCell>
-                    <Badge className={getLevelColor(log.level)}>
-                      {log.level.toUpperCase()}
+                    <Badge variant={getLevelBadgeVariant(log.level)}>
+                      {getLevelDisplayText(log.level)}
                     </Badge>
                   </TableCell>
                   <TableCell>

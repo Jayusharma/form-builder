@@ -10,10 +10,11 @@
 
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
-import { FormPreview } from '@/components/forms/FormPreview';
 import { FormField, FormStyle, FormFieldType } from '@/lib/schemas/form';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { FormPreview } from '@/components/forms/FormPreview';
 import { Card } from '@/components/ui/card';
-import { getDictionary } from '@/lib/dictionary';
+import { Locale } from '@/lib/i18n-config';
 
 /**
  * Grid Position Interface
@@ -57,7 +58,7 @@ interface FormWithFields {
  */
 function isGridPosition(value: unknown): value is GridPosition {
   if (!value || typeof value !== 'object') return false;
-  const pos = value as any;
+  const pos = value as Record<string, unknown>;
   return (
     typeof pos.x === 'number' &&
     typeof pos.y === 'number' &&
@@ -78,7 +79,7 @@ function isFormStyle(value: unknown): value is FormStyle {
     console.log('isFormStyle: value is not an object', value);
     return false;
   }
-  const style = value as any;
+  const style = value as Record<string, unknown>;
   
   // Log the style object we're checking
   console.log('isFormStyle: checking style object', style);
@@ -105,7 +106,7 @@ interface DatabaseForm {
   id: string;
   title: string;
   description: string | null;
-  style: any;
+  style: JsonValue;
   header: { logo?: string; text?: string; } | null;
   footer: { logo?: string; text?: string; } | null;
   fields: Array<{
@@ -115,7 +116,7 @@ interface DatabaseForm {
     required: boolean;
     options: string[];
     description: string | null;
-    gridPosition: any;
+    gridPosition: JsonValue;
     order: number;
   }>;
 }
@@ -150,20 +151,39 @@ async function getForm(formId: string): Promise<FormWithFields> {
     return aPos.y - bPos.y;
   });
 
+  // Default form style if not valid
+  const defaultStyle: FormStyle = {
+    width: 'medium',
+    alignment: 'left',
+    spacing: 'comfortable',
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    primaryColor: '#2563eb',
+    borderColor: '#e5e7eb',
+    fontFamily: 'Inter',
+    headingFontSize: '1.5rem',
+    bodyFontSize: '1rem',
+    borderRadius: 'md'
+  };
+
   return {
     id: form.id,
     title: form.title,
     description: form.description || '',
-    style: form.style as any,
-    header: form.header as { logo?: string; text?: string; } | null,
-    footer: form.footer as { logo?: string; text?: string; } | null,
+    style: isFormStyle(form.style) ? form.style as FormStyle : defaultStyle,
+    header: form.header,
+    footer: form.footer,
     fields: sortedFields.map(field => ({
-      ...field,
+      id: field.id,
+      type: field.type,
+      question: field.question,
+      required: field.required,
+      options: field.options,
       description: field.description ?? undefined,
       gridPosition: isGridPosition(field.gridPosition) 
         ? field.gridPosition 
         : { x: 0, y: 0, width: 12, height: 1 },
-    } as FormField)),
+    })),
   };
 }
 
@@ -171,8 +191,9 @@ async function getForm(formId: string): Promise<FormWithFields> {
  * Page Props Type
  * Defines the expected parameters for the page component
  */
-type Props = {
-  params: Promise<{ formId: string; locale: string }>;
+type PageProps = {
+  params: Promise<{ formId: string; locale: Locale }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 /**
@@ -182,19 +203,15 @@ type Props = {
  * @param {Props} props - The component props
  * @returns {Promise<JSX.Element>} The rendered form preview page
  */
-export default async function FormPage({ params }: Props) {
-  const resolvedParams = await params;
-  const form = await getForm(resolvedParams.formId);
-  const locale = resolvedParams.locale === 'es' ? 'es' : 'en';
-  const dict = await getDictionary(locale);
+export default async function FormPage(props: PageProps) {
+  const params = await props.params;
+  const form = await getForm(params.formId);
 
   return (
     <div className="flex flex-row w-screen items-center h-auto container">
       <Card className='flex justify-center items-center w-screen'>
         <FormPreview 
           form={form}
-          fields={form.fields}
-          isPublic={true}
         />
       </Card>
     </div>

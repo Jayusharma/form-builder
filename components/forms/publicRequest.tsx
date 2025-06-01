@@ -61,6 +61,54 @@ interface Request {
 }
 
 /**
+ * RequestActions Component
+ * Renders action buttons for a request
+ * 
+ * @param {Object} props - Component props
+ * @param {Request} props.request - The request to render actions for
+ * @param {Function} props.onAction - Callback for request actions
+ * @param {Function} props.onReview - Callback for review action
+ * @returns {JSX.Element} Rendered action buttons
+ */
+function RequestActions({ request, onAction, onReview }: {
+  request: Request;
+  onAction: (requestId: string, action: "approve" | "reject") => Promise<void>;
+  onReview: (formId: string) => void;
+}) {
+  const dict = useDictionary();
+
+  if (request.accepted) {
+    return null;
+  }
+
+  return (
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onReview(request.formId)}
+      >
+        {dict.publicRequest.request.actions.review}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onAction(request.id, "approve")}
+      >
+        {dict.publicRequest.request.actions.approve}
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => onAction(request.id, "reject")}
+      >
+        {dict.publicRequest.request.actions.reject}
+      </Button>
+    </div>
+  );
+}
+
+/**
  * PublicRequest Component
  * Main component for managing form publication requests
  * 
@@ -119,10 +167,12 @@ export default function PublicRequest() {
           throw new Error(errorData.error || dict.publicRequest.notifications.error.fetchFailed);
         }
         const data = await response.json();
-        if (!data.requests) {
+        // Handle both formats: direct array or { requests: [] }
+        const requests = Array.isArray(data) ? data : data.requests;
+        if (!Array.isArray(requests)) {
           throw new Error(dict.publicRequest.notifications.error.invalidResponse);
         }
-        setRequests(data.requests);
+        setRequests(requests);
       } catch (error) {
         console.error("Error fetching requests:", error);
         toast.error(error instanceof Error ? error.message : dict.publicRequest.notifications.error.loadFailed);
@@ -139,6 +189,7 @@ export default function PublicRequest() {
   /**
    * Handles request approval or rejection
    * Updates request status and notifies user of the action
+   * Used in the request card actions
    * 
    * @param {string} requestId - ID of the request to process
    * @param {"approve" | "reject"} action - Action to perform on the request
@@ -264,19 +315,11 @@ export default function PublicRequest() {
                 {/* Request Card Content */}
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      {!request.accepted && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/review/${request.formId}` as `/${string}`)}
-                          >
-                            {dict.publicRequest.request.actions.review}
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                    <RequestActions
+                      request={request}
+                      onAction={handleRequestAction}
+                      onReview={(formId) => router.push(`/review/${formId}` as `/${string}`)}
+                    />
                   </div>
                 </CardContent>
               </Card>

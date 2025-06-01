@@ -26,7 +26,7 @@ import { useDictionary } from "@/hooks/useDictionary";
  * @property {string} form.title - Form title
  * @property {string|null} form.description - Form description
  * @property {string} createdAt - Submission timestamp
- * @property {Record<string, any>} responses - Submitted form responses
+ * @property {Record<string, unknown>} responses - Submitted form responses
  */
 interface Submission {
   id: string;
@@ -36,7 +36,7 @@ interface Submission {
     description: string | null;
   };
   createdAt: string;
-  responses: Record<string, any>;
+  responses: Record<string, unknown>;
 }
 
 /**

@@ -16,20 +16,20 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { CalendarDays, User, MoreVertical, Eye, ExternalLink, Recycle } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import Link from "next/link";
+import { CalendarDays, User, } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { FilterBar, SortOption } from './FilterBar';
-import { ShareButton } from "../ui/share-button";
+// import { ShareButton } from "../ui/share-button";
 import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from "@/components/ui/use-toast";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu";
+// import { toast } from "@/components/ui/use-toast";
 import { FormActionsMenu } from "./FormActionsMenu";
 import { useDictionary } from "@/hooks/useDictionary";
 
@@ -42,6 +42,7 @@ import { useDictionary } from "@/hooks/useDictionary";
  * @property {string} title - Form title
  * @property {string|null} description - Form description
  * @property {Date} updatedAt - Last update timestamp
+ * @property {Date} createdAt - Creation timestamp
  * @property {string} userId - Creator's user ID
  * @property {boolean} isPublished - Form publication status
  * @property {Object} user - Form creator information
@@ -57,6 +58,7 @@ interface Form {
   title: string;
   description: string | null;
   updatedAt: Date;
+  createdAt: Date;
   userId: string;
   isPublished: boolean;
   user: {
@@ -94,6 +96,30 @@ interface Form {
     headingFontSize: string;
     bodyFontSize: string;
   };
+}
+
+/**
+ * FormActions Component
+ * Renders form action buttons and menu
+ * 
+ * @param {Object} props - Component props
+ * @param {Form} props.form - The form to render actions for
+ * @param {Function} props.onReuseForm - Callback for form reuse
+ * @param {Function} props.onFormUpdate - Callback for form updates
+ * @returns {JSX.Element} Rendered form actions
+ */
+function FormActions({ form, onReuseForm, onFormUpdate }: {
+  form: Form;
+  onReuseForm: (form: Form) => void;
+  onFormUpdate: (form: Form) => void;
+}) {
+  return (
+    <FormActionsMenu 
+      form={form} 
+      onFormUpdate={onFormUpdate}
+      onReuseForm={onReuseForm}
+    />
+  );
 }
 
 /**
@@ -278,9 +304,9 @@ export default function PublishedFormsList() {
                       {form.description || dict.publishedForms.form.noDescription}
                     </CardDescription>
                   </div>
-                  {/* Form Actions Menu */}
-                  <FormActionsMenu 
+                  <FormActions 
                     form={form} 
+                    onReuseForm={handleReuseForm}
                     onFormUpdate={handleFormUpdate}
                   />
                 </div>

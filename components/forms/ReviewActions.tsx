@@ -39,11 +39,9 @@ import {
  * Defines the props for the ReviewActions component
  * 
  * @interface
- * @property {string} formId - ID of the form being reviewed
  * @property {string} requestId - ID of the publication request
  */
 interface ReviewActionsProps {
-  formId: string;
   requestId: string;
 }
 
@@ -54,7 +52,7 @@ interface ReviewActionsProps {
  * @param {ReviewActionsProps} props - Component props
  * @returns {JSX.Element} Rendered review actions interface
  */
-export function ReviewActions({ formId, requestId }: ReviewActionsProps) {
+export function ReviewActions({ requestId }: ReviewActionsProps) {
   // Router and toast setup
   const router = useRouter();
   const { toast } = useToast();

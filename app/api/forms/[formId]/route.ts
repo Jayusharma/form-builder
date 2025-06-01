@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { FormFieldType } from "@/lib/schemas/form";
 
 /**
  * Route Parameters Type
@@ -21,6 +22,33 @@ import { db } from "@/lib/db";
 type RouteParams = {
   params: Promise<{ formId: string }>;
 };
+
+interface FormField {
+  type: FormFieldType;
+  question: string;
+  required: boolean;
+  options?: string[];
+  description?: string;
+  gridPosition: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+interface FormData {
+  title?: string;
+  description?: string | null;
+  fields?: FormField[];
+  style?: {
+    fontFamily: string;
+    fontSize: string;
+    backgroundColor: string;
+    textColor: string;
+  };
+  isPublished?: boolean;
+}
 
 /**
  * GET /api/forms/[formId]
@@ -82,12 +110,11 @@ export async function PATCH(
     // Verify user authentication
     const session = await auth();
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse("Unauthorized", { status: 403 });
     }
 
     const resolvedParams = await params;
-    const body = await req.json();
-    const { title, description, fields, style } = body;
+    const data = await req.json() as FormData;
 
     // Verify form exists and user is owner
     const form = await db.form.findUnique({
@@ -112,9 +139,9 @@ export async function PATCH(
           id: resolvedParams.formId,
         },
         data: {
-          title,
-          description,
-          style,
+          title: data.title,
+          description: data.description,
+          style: data.style,
         },
       });
 
@@ -127,7 +154,7 @@ export async function PATCH(
 
       // Create new fields with order
       const formFields = await Promise.all(
-        fields.map((field: any, index: number) => {
+        data.fields?.map((field: FormField, index: number) => {
           return tx.formField.create({
             data: {
               formId: resolvedParams.formId,
@@ -140,7 +167,7 @@ export async function PATCH(
               order: index,
             },
           });
-        })
+        }) || []
       );
 
       return {
