@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const session = await auth();
   
   if (!session?.user) {
-    redirect("/login");
+    redirect("/auth/login");
   }
 
   const userName = session.user.name || session.user.email || 'User';

@@ -83,7 +83,7 @@ const navigationItems: NavigationItems = {
   ],
   GUEST: [
     { key: 'home', href: '/', icon: Home },
-    { key: 'login', href: '/login', icon: User },
+    { key: 'login', href: '/auth/login', icon: User },
   ],
   MANAGER: [
     { key: 'dashboard', href: '/dashboard', icon: Home },
