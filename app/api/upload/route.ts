@@ -11,9 +11,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { existsSync } from 'fs';
 
 /**
  * POST /api/upload
@@ -73,10 +74,32 @@ export async function POST(request: Request) {
 
     // Define upload path
     const uploadDir = join(process.cwd(), 'public', 'uploads');
+    
+    // Create uploads directory if it doesn't exist
+    if (!existsSync(uploadDir)) {
+      try {
+        await mkdir(uploadDir, { recursive: true });
+      } catch (error) {
+        console.error('Error creating uploads directory:', error);
+        return NextResponse.json(
+          { error: 'Server configuration error - cannot create upload directory' },
+          { status: 500 }
+        );
+      }
+    }
+
     const filepath = join(uploadDir, filename);
 
-    // Save file to disk
-    await writeFile(filepath, buffer);
+    try {
+      // Save file to disk
+      await writeFile(filepath, buffer);
+    } catch (error) {
+      console.error('Error writing file:', error);
+      return NextResponse.json(
+        { error: 'Server configuration error - cannot write file' },
+        { status: 500 }
+      );
+    }
 
     // Return success response with file URL
     return NextResponse.json({ 
