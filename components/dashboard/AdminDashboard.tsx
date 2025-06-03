@@ -102,7 +102,7 @@ function DashboardContent({ userName }: AdminDashboardProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MyForms userRole="ADMIN" />
+              <MyForms />
             </CardContent>
           </Card>
         </TabsContent>

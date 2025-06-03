@@ -13,11 +13,26 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { FormField } from "@/lib/schemas/form";
-import { formLogger } from "@/lib/formLogger";
-import { Prisma } from "@prisma/client";
+import { FormSchema } from "@/lib/schemas/form";
+import { FormFieldType, Prisma } from "@prisma/client";
+import { ZodError } from "zod";
+import formLogger from "@/lib/formLogger";
 
-interface FormCreateData {
+interface FormField {
+  type: FormFieldType;
+  question: string;
+  required: boolean;
+  options?: string[];
+  description?: string;
+  gridPosition: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+interface FormData {
   title: string;
   description?: string;
   fields: FormField[];
@@ -27,6 +42,8 @@ interface FormCreateData {
     backgroundColor: string;
     textColor: string;
   };
+  header?: string | null;
+  footer?: string | null;
 }
 
 interface FormUpdateData {
@@ -77,42 +94,183 @@ function gridPositionToJson(gridPosition: { x: number; y: number; width: number;
 export async function POST(req: Request) {
   try {
     const session = await auth();
+    
+    // Check if user is authenticated
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const data = await req.json() as FormCreateData;
-    
-    const form = await db.form.create({
-      data: {
-        title: data.title,
-        description: data.description || "",
-        userId: session.user.id,
-        fields: {
-          create: data.fields.map((field, index) => ({
-            type: field.type,
-            question: field.question,
-            required: field.required,
-            options: field.options || [],
-            description: field.description || '',
-            gridPosition: gridPositionToJson(field.gridPosition),
-            order: index
-          }))
-        },
-        style: data.style || {
-          fontFamily: "inter",
-          fontSize: "base",
-          backgroundColor: "#ffffff",
-          textColor: "#000000"
-        }
-      }
+    // Only SADMIN and ADMIN can create forms
+    if (!["SADMIN", "ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ 
+        error: "Permission Denied",
+        message: "You are not authorized to create forms. Please contact your administrator."
+      }, { status: 403 });
+    }
+
+    // Verify user exists in database
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
     });
 
-    await formLogger.info("Form created", { formId: form.id, userId: session.user.id });
-    return NextResponse.json(form);
+    if (!user) {
+      console.error("User not found in database:", { userId: session.user.id });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Parse and validate request body
+    let body: FormData;
+    try {
+      const rawBody = await req.json();
+      body = FormSchema.parse(rawBody) as FormData;
+    } catch (e) {
+      console.error("Failed to parse request body:", e);
+      if (e instanceof ZodError) {
+        return NextResponse.json(
+          {
+            error: "Invalid form data",
+            details: e.errors.map((err) => ({
+              path: err.path.join("."),
+              message: err.message,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(
+        {
+          error: "Invalid request data",
+          details: e instanceof Error ? e.message : "Unknown error",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Create form in database
+    try {
+      // First, verify database connection
+      await db.$connect();
+
+      // Create the form with its fields in a transaction
+      const result = await db.$transaction(async (tx) => {
+        // Create the form first
+        const newForm = await tx.form.create({
+          data: {
+            title: body.title,
+            description: body.description || "",
+            style: body.style || {},
+            header: body.header as Prisma.InputJsonValue | undefined,
+            footer: body.footer as Prisma.InputJsonValue | undefined,
+            userId: user.id,
+            isPublished: false,
+          },
+        });
+
+        // Create all form fields
+        const formFields = await Promise.all(
+          body.fields.map((field: FormField, index: number) => {
+            return tx.formField.create({
+              data: {
+                formId: newForm.id,
+                type: field.type,
+                question: field.question,
+                required: field.required,
+                options: field.options || [],
+                description: field.description || '',
+                gridPosition: field.gridPosition,
+                order: index,
+              },
+            });
+          })
+        );
+
+        // Log form creation
+        formLogger.logFormCreated({
+          formId: newForm.id,
+          userId: user.id, 
+          formTitle: newForm.title,
+          additionalInfo: {
+            fieldCount: formFields.length,
+            isPublished: false,
+            createdBy: user.role,
+            description: newForm.description || 'No description',
+            fields: formFields.map(field => ({
+              type: field.type,
+              question: field.question,
+              required: field.required,
+              order: field.order
+            })),
+            hasHeader: Boolean(body.header),
+            hasFooter: Boolean(body.footer),
+            style: body.style || {},
+            createdAt: new Date().toISOString()
+          }
+        });
+
+        await tx.publicRequest.create({
+          data: {
+            formId: newForm.id,
+          },
+        });
+
+        // Return the form with its fields
+        return {
+          ...newForm,
+          fields: formFields,
+        };
+      });
+
+      return NextResponse.json(result);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error("Database error details:", {
+          message: error.message,
+          code: error.code,
+          meta: error.meta,
+        });
+
+        // Check for specific database errors
+        if (error.code === "P2002") {
+          return NextResponse.json(
+            { error: "A form with this title already exists" },
+            { status: 400 }
+          );
+        }
+
+        return NextResponse.json(
+          {
+            error: "Database error",
+            details: {
+              message: error.message,
+              code: error.code,
+              meta: error.meta,
+            },
+          },
+          { status: 500 }
+        );
+      }
+
+      throw error;
+    } finally {
+      await db.$disconnect();
+    }
   } catch (error) {
-    console.error("[FORM_CREATE]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Unexpected error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    });
+
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? {
+          message: error.message,
+          type: error.name,
+        } : { message: "Unknown error" },
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -144,34 +302,53 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const session = await auth();
+    
+    // Check if user is authenticated
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Get query parameters
     const { searchParams } = new URL(req.url);
-    const published = searchParams.get("published");
     const userId = searchParams.get("userId");
 
+    // Build the where clause based on user role
+    let whereClause = {};
+    
+    switch (session.user.role) {
+      case "SADMIN":
+        // SADMIN can see all forms, optionally filtered by userId
+        whereClause = userId ? { userId } : {};
+        break;
+      case "MANAGER":
+        // MANAGER can see all forms
+        whereClause = {};
+        break;
+      case "ADMIN":
+        // ADMIN can only see their own forms
+        whereClause = { userId: session.user.id };
+        break;
+      default:
+        // Other roles can only see their own forms
+        whereClause = { userId: session.user.id };
+    }
+
+    // Fetch forms with their fields and submissions
     const forms = await db.form.findMany({
-      where: {
-        userId: userId || session.user.id,
-        isPublished: published === "true" ? true : undefined
-      },
+      where: whereClause,
       include: {
-        fields: {
+        fields: true,
+        submissions: {
           orderBy: {
-            order: "asc"
+            createdAt: "desc"
           }
         },
         user: {
           select: {
+            id: true,
             name: true,
-            email: true
-          }
-        },
-        submissions: {
-          orderBy: {
-            createdAt: "desc"
+            email: true,
+            role: true
           }
         },
         _count: {
@@ -181,13 +358,14 @@ export async function GET(req: Request) {
         }
       },
       orderBy: {
-        createdAt: "desc"
+        updatedAt: "desc"
       }
     });
 
+    // Return the forms array directly instead of wrapping it in an object
     return NextResponse.json(forms);
   } catch (error) {
-    console.error("[FORMS_GET]", error);
+    console.error("FORMS_GET_ERROR", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

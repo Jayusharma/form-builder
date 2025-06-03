@@ -22,14 +22,13 @@ import { CalendarDays, User, } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { FilterBar, SortOption } from './FilterBar';
 // import { ShareButton } from "../ui/share-button";
-import { useRouter } from "next/navigation";
 // import {
 //   DropdownMenu,
 //   DropdownMenuContent,
 //   DropdownMenuItem,
 //   DropdownMenuTrigger,
 // } from "@/components/ui/dropdown-menu";
-// import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { FormActionsMenu } from "./FormActionsMenu";
 import { useDictionary } from "@/hooks/useDictionary";
 
@@ -130,7 +129,6 @@ function FormActions({ form, onReuseForm, onFormUpdate }: {
  */
 export default function PublishedFormsList() {
   // Router setup
-  const router = useRouter();
   const dict = useDictionary();
 
   // Component state management
@@ -228,13 +226,31 @@ export default function PublishedFormsList() {
    * @param {Form} form - Form to be reused as template
    */
   const handleReuseForm = (form: Form) => {
-    const formData = encodeURIComponent(JSON.stringify({
-      title: form.title,
-      description: form.description,
-      fields: form.fields,
-      style: form.style
-    }));
-    router.push(`/admin/forms/create?reuse=${formData}`);
+    try {
+      const templateData = {
+        title: `${form.title} (Copy)`,
+        description: form.description,
+        fields: form.fields,
+        style: form.style
+      };
+
+      const jsonString = JSON.stringify(templateData);
+      const encodedData = encodeURIComponent(jsonString);
+
+      // Use window.location.href for consistent navigation
+      const baseUrl = window.location.origin;
+      const locale = window.location.pathname.split('/')[1] || 'en';
+      const url = `${baseUrl}/${locale}/admin/forms/create?reuse=${encodedData}`;
+
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error reusing form:', error);
+      toast({
+        title: "Error creating form template",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
   };
 
   /**

@@ -37,24 +37,41 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FormEventType } from "@/lib/formLogger";
 import { useDictionary } from "@/hooks/useDictionary";
-import { toast } from "@/components/ui/use-toast";
+
+// Event type display names mapping
+const EVENT_DISPLAY_NAMES: Record<FormEventType, string> = {
+  'FORM_CREATED': 'Form Created',
+  'FORM_UPDATED': 'Form Updated',
+  'FORM_DELETED': 'Form Deleted',
+  'FORM_MADE_PRIVATE': 'Made Private',
+  'FORM_MADE_PUBLIC': 'Made Public',
+  'FORM_SUBMITTED': 'Form Submitted',
+  'FORM_RESPONSE_VIEWED': 'Response Viewed',
+  'FORM_SHARED': 'Form Shared',
+  'FORM_REQUEST_UNAUTHORIZED': 'Unauthorized Request',
+  'FORM_REQUEST_PROCESSING': 'Request Processing',
+  'FORM_REQUEST_NOT_FOUND': 'Request Not Found',
+  'FORM_REQUEST_FORBIDDEN': 'Request Forbidden',
+  'FORM_REQUEST_ACCEPTED': 'Request Accepted',
+  'FORM_REQUEST_REJECTED': 'Request Rejected',
+  'FORM_REQUEST_ERROR': 'Request Error'
+};
 
 /**
  * LogEntry Interface
  * Defines the structure of a log entry in the system
  */
 interface LogEntry {
-  id: string;
-  level: 'info' | 'warning' | 'error';
-  message: string;
-  metadata: Record<string, unknown>;
   timestamp: string;
-  event: string;
+  level: "info" | "warn" | "error" | "debug";
+  event?: FormEventType;
   formId?: string;
   userId?: string;
   userName?: string;
   formTitle?: string;
+  additionalInfo?: Record<string, unknown>;
   rawMessage?: string;
 }
 
@@ -70,44 +87,65 @@ export function LogsViewer({
   refreshInterval = 5000,
 }: LogsViewerProps) {
   const dict = useDictionary();
-  const [logs, setLogs] = useState<LogEntry[]>(initialLogs);
-  const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<LogEntry[]>(sortLogsByTimestamp(initialLogs));
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [levelFilter, setLevelFilter] = useState<'all' | 'info' | 'warning' | 'error'>('all');
+  const [levelFilter, setLevelFilter] = useState<string>("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
 
+  // Helper function to sort logs by timestamp
+  function sortLogsByTimestamp(logsToSort: LogEntry[]): LogEntry[] {
+    return [...logsToSort].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }
+
+  // Helper function to check if a value matches the search query
+  function matchesSearchQuery(value: unknown): boolean {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'object') {
+      return Object.values(value as Record<string, unknown>).some(v => matchesSearchQuery(v));
+    }
+    return String(value).toLowerCase().includes(searchQuery.toLowerCase());
+  }
+
+  /**
+   * Fetches logs from the API endpoint
+   * Handles loading states and error conditions
+   */
   const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log(dict.logs.title);
       
-      const response = await fetch(`/api/logs?level=${levelFilter}`);
+      const response = await fetch("/api/logs");
+      console.log(dict.logs.metadata.title, response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || dict.logs.errors.fetchFailed.replace("{0}", response.status.toString()));
+        console.error(dict.logs.errors.fetchFailed, errorData);
+        throw new Error(errorData?.error || dict.logs.errors.fetchFailed);
       }
       
       const data = await response.json();
+      console.log(dict.logs.metadata.description.replace("{0}", data.logs?.length?.toString() || "0"));
       
       if (!Array.isArray(data.logs)) {
+        console.error(dict.logs.errors.invalidData, data);
         throw new Error(dict.logs.errors.invalidData);
       }
       
-      setLogs(data.logs);
+      const sortedLogs = sortLogsByTimestamp(data.logs);
+      setLogs(sortedLogs);
     } catch (err) {
-      console.error("Error fetching logs:", err);
-      setError(err instanceof Error ? err.message : dict.logs.errors.fetchFailed.replace("{0}", ""));
-      toast({
-        title: dict.logs.errors.title,
-        description: err instanceof Error ? err.message : dict.logs.errors.fetchFailed.replace("{0}", ""),
-        variant: "destructive",
-      });
+      console.error(dict.logs.errors.fetchFailed, err);
+      setError(err instanceof Error ? err.message : dict.logs.errors.fetchFailed);
     } finally {
       setLoading(false);
     }
-  }, [levelFilter, dict.logs.errors]);
+  }, [dict.logs]);
 
   useEffect(() => {
     fetchLogs();
@@ -118,37 +156,56 @@ export function LogsViewer({
     }
   }, [autoRefresh, refreshInterval, fetchLogs]);
 
-  /**
-   * Filters logs based on search query, level, and event type
-   * Returns filtered array of logs matching all criteria
-   */
+  // Filter logs with improved search
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch = searchQuery
-      ? Object.values(log).some((value) =>
-          String(value).toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : true;
+    // Deep search in log object including additionalInfo
+    const matchesSearch = !searchQuery || (
+      matchesSearchQuery(log.event) ||
+      matchesSearchQuery(log.formTitle) ||
+      matchesSearchQuery(log.userName) ||
+      matchesSearchQuery(log.userId) ||
+      matchesSearchQuery(log.formId) ||
+      matchesSearchQuery(log.additionalInfo)
+    );
 
-    const matchesLevel =
-      levelFilter === "all" ? true : log.level === levelFilter;
+    const matchesLevel = levelFilter === "all" || log.level === levelFilter;
+    const matchesEvent = eventFilter === "all" || log.event === eventFilter;
 
-    const matchesEvent =
-      eventFilter === "all" ? true : log.event === eventFilter;
+    console.log("Filtering log:", {
+      event: log.event,
+      level: log.level,
+      matchesSearch,
+      matchesLevel,
+      matchesEvent
+    });
 
     return matchesSearch && matchesLevel && matchesEvent;
   });
 
   /**
+   * Returns appropriate color classes for different log levels
+   */
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case "error":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
+      case "warn":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
+      case "info":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100";
+      case "debug":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100";
+    }
+  };
+
+  /**
    * Formats timestamp string to a more readable format
-   * @param timestamp - The timestamp string to format
    */
   const formatTimestamp = (timestamp: string) => {
     try {
-      // Handle the custom timestamp format (YYYY-MM-DD HH:mm:ss:SSSS)
-      const [datePart, timePart] = timestamp.split(" ");
-      const [hours, minutes, seconds] = timePart.split(":");
-      const date = new Date(datePart);
-      date.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds));
+      const date = new Date(timestamp);
       return format(date, "MMM d, yyyy HH:mm:ss");
     } catch {
       return timestamp;
@@ -157,12 +214,10 @@ export function LogsViewer({
 
   /**
    * Escapes special characters in CSV values
-   * @param value - The value to escape for CSV format
    */
-  const escapeCsvValue = (value: string | number | null | undefined): string => {
+  const escapeCsvValue = (value: unknown): string => {
     if (value === null || value === undefined) return '';
     const stringValue = String(value);
-    // If the value contains commas, quotes, or newlines, wrap it in quotes and escape existing quotes
     if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
@@ -171,14 +226,11 @@ export function LogsViewer({
 
   /**
    * Exports filtered logs to CSV format
-   * Creates and triggers download of CSV file
    */
   const exportLogs = () => {
     try {
       const csvContent = [
-        // CSV Header
-        ["Timestamp", "Level", "Event", "Form", "User",].join(","),
-        // CSV Rows
+        ["Timestamp", "Level", "Event", "Form", "User"].join(","),
         ...filteredLogs.map((log) => [
           escapeCsvValue(formatTimestamp(log.timestamp)),
           escapeCsvValue(log.level),
@@ -188,12 +240,10 @@ export function LogsViewer({
         ].join(","))
       ].join("\n");
 
-      // Create blob with proper encoding
       const blob = new Blob(["\ufeff", csvContent], { 
         type: "text/csv;charset=utf-8;" 
       });
       
-      // Create download link
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       const timestamp = format(new Date(), "yyyy-MM-dd-HH-mm");
@@ -201,40 +251,11 @@ export function LogsViewer({
       link.setAttribute("href", url);
       link.setAttribute("download", `form-logs-${timestamp}.csv`);
       document.body.appendChild(link);
-      
-      // Trigger download
       link.click();
-      
-      // Cleanup
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error exporting logs:", error);
-      // You might want to show an error message to the user here
-    }
-  };
-
-  const getLevelBadgeVariant = (level: LogEntry['level']): 'default' | 'destructive' | 'secondary' => {
-    switch (level) {
-      case 'error':
-        return 'destructive';
-      case 'warning':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
-
-  const getLevelDisplayText = (level: LogEntry['level']): string => {
-    switch (level) {
-      case 'error':
-        return dict.logs.filters.level.error;
-      case 'warning':
-        return dict.logs.filters.level.warn;
-      case 'info':
-        return dict.logs.filters.level.info;
-      default:
-        return level;
     }
   };
 
@@ -251,15 +272,16 @@ export function LogsViewer({
               className="pl-8"
             />
           </div>
-          <Select value={levelFilter} onValueChange={(value) => setLevelFilter(value as typeof levelFilter)}>
+          <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={dict.logs.filters.level.title} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{dict.logs.filters.level.all}</SelectItem>
-              <SelectItem value="info">{dict.logs.filters.level.info}</SelectItem>
-              <SelectItem value="warning">{dict.logs.filters.level.warn}</SelectItem>
               <SelectItem value="error">{dict.logs.filters.level.error}</SelectItem>
+              <SelectItem value="warn">{dict.logs.filters.level.warn}</SelectItem>
+              <SelectItem value="info">{dict.logs.filters.level.info}</SelectItem>
+              <SelectItem value="debug">{dict.logs.filters.level.debug}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={eventFilter} onValueChange={setEventFilter}>
@@ -268,33 +290,49 @@ export function LogsViewer({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{dict.logs.filters.event.all}</SelectItem>
-              <SelectItem value="FORM_CREATED">{dict.logs.filters.event.formCreated}</SelectItem>
-              <SelectItem value="FORM_SUBMITTED">{dict.logs.filters.event.formSubmitted}</SelectItem>
-              <SelectItem value="FORM_MADE_PRIVATE">{dict.logs.filters.event.formMadePrivate}</SelectItem>
-              <SelectItem value="FORM_MADE_PUBLIC">{dict.logs.filters.event.formMadePublic}</SelectItem>
-              <SelectItem value="FORM_DELETED">{dict.logs.filters.event.formDeleted}</SelectItem>
+              {Object.entries(EVENT_DISPLAY_NAMES).map(([eventType, displayName]) => (
+                <SelectItem key={eventType} value={eventType}>
+                  {displayName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={fetchLogs}
-            disabled={loading}
-            title={dict.logs.actions.refresh}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={exportLogs}
-            disabled={loading || filteredLogs.length === 0}
-            title={dict.logs.actions.export}
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={fetchLogs}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{dict.logs.actions.refresh}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={exportLogs}
+                  disabled={loading || filteredLogs.length === 0}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{dict.logs.actions.export}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -327,26 +365,26 @@ export function LogsViewer({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  <p className="mt-2 text-muted-foreground">{dict.logs.table.loading}</p>
+                  <p className="mt-2 text-muted-foreground">{dict.logs.title}</p>
                 </TableCell>
               </TableRow>
             ) : filteredLogs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   {logs.length === 0 ? (
                     <div>
-                      <p>{dict.logs.table.noLogs.title}</p>
+                      <p>{dict.logs.metadata.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {dict.logs.table.noLogs.description}
+                        {dict.logs.metadata.description}
                       </p>
                     </div>
                   ) : (
                     <div>
-                      <p>{dict.logs.table.noResults.title}</p>
+                      <p>{dict.logs.filters.searchPlaceholder}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {dict.logs.table.noResults.description}
+                        {dict.logs.filters.level.title}
                       </p>
                     </div>
                   )}
@@ -359,8 +397,8 @@ export function LogsViewer({
                     {formatTimestamp(log.timestamp)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getLevelBadgeVariant(log.level)}>
-                      {getLevelDisplayText(log.level)}
+                    <Badge className={getLevelColor(log.level)}>
+                      {log.level.toUpperCase()}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -368,14 +406,14 @@ export function LogsViewer({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="max-w-[150px] truncate">
-                            {log.event || "-"}
+                            {log.event ? EVENT_DISPLAY_NAMES[log.event] : "-"}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{dict.logs.table.tooltips.event.replace("{0}", log.event || "N/A")}</p>
+                          <p>{dict.logs.table.tooltips.event}: {log.event || "-"}</p>
                           {log.rawMessage && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              {dict.logs.table.tooltips.raw.replace("{0}", log.rawMessage)}
+                              {dict.logs.table.tooltips.raw}: {log.rawMessage}
                             </p>
                           )}
                         </TooltipContent>
@@ -395,7 +433,7 @@ export function LogsViewer({
                             <p>{log.formTitle}</p>
                             {log.formId && (
                               <p className="text-xs text-muted-foreground">
-                                {dict.logs.table.tooltips.form.id.replace("{0}", log.formId)}
+                                {dict.logs.table.tooltips.form.id}: {log.formId}
                               </p>
                             )}
                           </TooltipContent>
@@ -414,10 +452,10 @@ export function LogsViewer({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{dict.logs.table.tooltips.user.title.replace("{0}", log.userName || "N/A")}</p>
+                          <p>{dict.logs.table.tooltips.user.title}: {log.userName || "-"}</p>
                           {log.userId && (
                             <p className="text-xs text-muted-foreground">
-                              {dict.logs.table.tooltips.user.id.replace("{0}", log.userId)}
+                              {dict.logs.table.tooltips.user.id}: {log.userId}
                             </p>
                           )}
                         </TooltipContent>

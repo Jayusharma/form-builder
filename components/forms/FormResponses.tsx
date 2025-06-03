@@ -50,6 +50,10 @@ interface FormResponsesProps {
   userRole: "ADMIN" | "MANAGER" | "SADMIN";
 }
 
+interface RawSubmission extends Omit<FormSubmission, 'responses'> {
+  responses: Record<string, string | number | boolean | string[] | null>;
+}
+
 /**
  * FormResponses Component
  * Manages and displays form submissions with role-based access control
@@ -91,7 +95,15 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
       const response = await fetch(`/api/forms/${formId}/submissions`);
       if (!response.ok) throw new Error("Failed to fetch submissions");
       const data = await response.json();
-      setSubmissions(data.submissions);
+      
+      // Ensure submissions are properly formatted
+      const formattedSubmissions = data.submissions.map((submission: RawSubmission) => ({
+        ...submission,
+        responses: submission.responses || {},
+        createdAt: new Date(submission.createdAt).toISOString()
+      }));
+      
+      setSubmissions(formattedSubmissions);
     } catch (error) {
       console.error("Error fetching submissions:", error);
       setSubmissions([]);
@@ -102,7 +114,6 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
 
   /**
    * Handles form selection from the dropdown
-   * Updates the selected form and fetches its submissions
    */
   const handleFormSelect = useCallback((formId: string) => {
     const form = forms.find((f) => f.id === formId);
@@ -115,7 +126,6 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
 
   /**
    * Effect hook for fetching and filtering forms
-   * Handles role-based form access and initial form selection
    */
   const fetchForms = useCallback(async () => {
     try {
@@ -132,8 +142,12 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
 
       let filteredForms = data as ExtendedForm[];
       
+      // Filter forms based on user role
       if (userRole === "ADMIN" && session?.user?.id) {
         filteredForms = filteredForms.filter((form: ExtendedForm) => form.userId === session.user.id);
+      } else if (userRole === "SADMIN") {
+        // SADMIN sees all forms
+        filteredForms = data;
       }
       
       setForms(filteredForms);
@@ -144,14 +158,17 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
         const formToSelect = filteredForms.find(form => form.id === formIdFromQuery);
         if (formToSelect) {
           setSelectedForm(formToSelect);
+          fetchSubmissions(formToSelect.id);
           setTimeout(() => {
             updateUrlWithoutFormId(searchParams);
           }, 0);
         } else if (filteredForms.length > 0) {
           setSelectedForm(filteredForms[0]);
+          fetchSubmissions(filteredForms[0].id);
         }
       } else if (filteredForms.length > 0) {
         setSelectedForm(filteredForms[0]);
+        fetchSubmissions(filteredForms[0].id);
       }
     } catch (error) {
       console.error("Error fetching forms:", error);
@@ -159,7 +176,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.user?.id, userRole, searchParams, updateUrlWithoutFormId]);
+  }, [session?.user?.id, userRole, searchParams, updateUrlWithoutFormId, fetchSubmissions]);
 
   useEffect(() => {
     if (session?.user) {
@@ -188,6 +205,11 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
       }
     };
   }, [searchParams, updateUrlWithoutFormId]);
+
+  const handleRowClick = (submission: FormSubmission) => {
+    const locale = window.location.pathname.split('/')[1] || 'en';
+    router.push(`/${locale}/admin/responses/${submission.id}`);
+  };
 
   // Loading state
   if (isLoading) {
@@ -286,7 +308,7 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
                     <TableRow 
                       key={submission.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => router.push(`/admin/responses/${submission.id}` as `/${string}`)}
+                      onClick={() => handleRowClick(submission)}
                     >
                       <TableCell className="font-medium">{index + 1}</TableCell>
                       {selectedForm?.fields.map((field) => (
@@ -295,7 +317,9 @@ export default function FormResponses({ userRole }: FormResponsesProps) {
                             const value = submission.responses[field.id];
                             if (value === null || value === undefined) return '-';
                             if (Array.isArray(value)) return value.join(', ');
-                            if (value instanceof File) return value.name;
+                            if (typeof value === 'object' && value !== null) {
+                              return JSON.stringify(value);
+                            }
                             return String(value);
                           })()}
                         </TableCell>

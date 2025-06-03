@@ -140,19 +140,78 @@ export function FormActionsMenu({ form, showReuse = true, onFormUpdate, onReuseF
    * 
    * @param {Form} form - Form to be reused as template
    */
-  const handleReuseForm = (form: Form) => {
-    if (onReuseForm) {
-      onReuseForm(form);
-      return;
-    }
+  const handleReuseForm = async (form: Form) => {
+    try {
+      if (onReuseForm) {
+        onReuseForm(form);
+        return;
+      }
 
-    const formData = encodeURIComponent(JSON.stringify({
-      title: form.title,
-      description: form.description,
-      fields: form.fields,
-      style: form.style
-    }));
-    router.push(`/admin/forms/create?reuse=${formData}`);
+      console.log('Starting form reuse with form:', form);
+
+      // Prepare the form data for reuse
+      const templateData = {
+        title: `${form.title} (Copy)`,
+        description: form.description,
+        fields: form.fields.map(field => ({
+          id: field.id,
+          type: field.type,
+          question: field.question,
+          description: field.description,
+          required: field.required,
+          options: field.options || [],
+          gridPosition: {
+            x: field.gridPosition.x,
+            y: field.gridPosition.y,
+            width: field.gridPosition.width,
+            height: field.gridPosition.height
+          },
+          order: field.order
+        })),
+        style: {
+          width: form.style.width,
+          alignment: form.style.alignment,
+          spacing: form.style.spacing,
+          borderRadius: form.style.borderRadius,
+          backgroundColor: form.style.backgroundColor,
+          textColor: form.style.textColor,
+          primaryColor: form.style.primaryColor,
+          borderColor: form.style.borderColor,
+          fontFamily: form.style.fontFamily,
+          headingFontSize: form.style.headingFontSize,
+          bodyFontSize: form.style.bodyFontSize
+        }
+      };
+
+      console.log('Template data prepared:', templateData);
+
+      // Convert to JSON and encode for URL
+      const jsonString = JSON.stringify(templateData);
+      console.log('JSON string:', jsonString);
+      
+      const encodedData = encodeURIComponent(jsonString);
+      console.log('Encoded data:', encodedData);
+
+      // Use window.location.href for navigation
+      const baseUrl = window.location.origin;
+      const locale = window.location.pathname.split('/')[1] || 'en';
+      const url = `${baseUrl}/${locale}/admin/forms/create?reuse=${encodedData}`;
+      console.log('Final URL:', url);
+
+      window.location.href = url;
+      
+      toast({
+        title: "Form template created",
+        description: "You can now customize your new form",
+      });
+    } catch (error) {
+      console.error('Error reusing form:', error);
+      toast({
+        title: "Error creating form template",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
   };
 
   /**

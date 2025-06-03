@@ -58,7 +58,7 @@ import {
 //   SelectValue,
 // } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { FormPreview } from '@/components/forms/FormPreview';
 import { RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -1000,24 +1000,37 @@ export interface GridFormBuilderProps {
       cancel: string;
     };
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export function GridFormBuilder({ dict }: GridFormBuilderProps) {
+export function GridFormBuilder({ dict, searchParams }: GridFormBuilderProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   
-  // Get reused form data from URL if present
+  // Get reused form data from searchParams prop
   const reusedFormData = React.useMemo(() => {
-    const reuseParam = searchParams.get('reuse');
-    if (!reuseParam) return null;
+    console.log('GridFormBuilder searchParams:', searchParams); // Debug log
+    const reuseParam = searchParams.reuse;
+    console.log('Reuse param:', reuseParam); // Debug log
+    
+    if (!reuseParam || Array.isArray(reuseParam)) {
+      console.log('No valid reuse param found'); // Debug log
+      return null;
+    }
+    
     try {
-      return JSON.parse(decodeURIComponent(reuseParam)) as ReusedFormData;
+      const decoded = decodeURIComponent(reuseParam);
+      console.log('Decoded param:', decoded); // Debug log
+      const parsed = JSON.parse(decoded) as ReusedFormData;
+      console.log('Parsed data:', parsed); // Debug log
+      return parsed;
     } catch (e) {
       console.error('Failed to parse reused form data:', e);
       return null;
     }
   }, [searchParams]);
+
+  console.log('Final reusedFormData:', reusedFormData); // Debug log
 
   // Initialize state with reused form data if available
   const [fields, setFields] = useState<GridFormField[]>(() => {

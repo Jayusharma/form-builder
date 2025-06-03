@@ -26,6 +26,7 @@ import { useTypedNavigation } from '@/hooks/useTypedNavigation';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays } from 'lucide-react';
 import { FormActionsMenu } from '@/components/forms/FormActionsMenu';
+import { useSession } from 'next-auth/react';
 
 /**
  * Form Interface
@@ -94,30 +95,26 @@ interface Form {
 }
 
 /**
- * MyFormsProps Interface
- * Defines the props for the MyForms component
- */
-interface MyFormsProps {
-  userRole?: 'ADMIN' | 'SADMIN';
-}
-
-/**
  * MyForms Component
- * Main component for managing user's forms
+ * Main component for managing user's forms. Shows only forms created by the current user,
+ * regardless of their role.
  * 
  * @returns {JSX.Element} Rendered form management interface
  */
-export function MyForms({ userRole = 'ADMIN' }: MyFormsProps) {
+export function MyForms() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const { navigate } = useTypedNavigation();
   const dict = useDictionary();
+  const { data: session } = useSession();
 
   useEffect(() => {
     const fetchForms = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/forms?role=${userRole}`);
+        // Always fetch only the current user's forms
+        const endpoint = `/api/forms?userId=${session?.user?.id}`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to fetch forms');
         const data = await response.json();
         setForms(data);
@@ -128,8 +125,11 @@ export function MyForms({ userRole = 'ADMIN' }: MyFormsProps) {
       }
     };
 
-    fetchForms();
-  }, [userRole]);
+    // Only fetch forms if we have session data
+    if (session?.user) {
+      fetchForms();
+    }
+  }, [session]);
 
   const handleFormUpdate = (updatedForm: Form) => {
     setForms(forms.map(form => 

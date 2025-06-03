@@ -104,7 +104,7 @@ function DashboardContent({ userName }: SuperAdminDashboardProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MyForms userRole="SADMIN" />
+              <MyForms />
             </CardContent>
           </Card>
         </TabsContent>

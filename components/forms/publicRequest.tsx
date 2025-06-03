@@ -70,7 +70,7 @@ interface Request {
  * @param {Function} props.onReview - Callback for review action
  * @returns {JSX.Element} Rendered action buttons
  */
-function RequestActions({ request, onAction, onReview }: {
+function RequestActions({ request, onReview }: {
   request: Request;
   onAction: (requestId: string, action: "approve" | "reject") => Promise<void>;
   onReview: (formId: string) => void;
@@ -90,20 +90,7 @@ function RequestActions({ request, onAction, onReview }: {
       >
         {dict.publicRequest.request.actions.review}
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onAction(request.id, "approve")}
-      >
-        {dict.publicRequest.request.actions.approve}
-      </Button>
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={() => onAction(request.id, "reject")}
-      >
-        {dict.publicRequest.request.actions.reject}
-      </Button>
+ 
     </div>
   );
 }
@@ -161,18 +148,35 @@ export default function PublicRequest() {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch("/api/forms/requests");
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || dict.publicRequest.notifications.error.fetchFailed);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
-        // Handle both formats: direct array or { requests: [] }
-        const requests = Array.isArray(data) ? data : data.requests;
-        if (!Array.isArray(requests)) {
+        console.log("Received requests data:", data); // Debug log
+        
+        // Ensure we have an array of requests
+        const requestsArray = Array.isArray(data) ? data : data.requests;
+        
+        if (!requestsArray) {
+          console.error("Invalid response format:", data); // Debug log
           throw new Error(dict.publicRequest.notifications.error.invalidResponse);
         }
-        setRequests(requests);
+
+        // Transform dates to Date objects
+        const transformedRequests = requestsArray.map((request: Request & { form: { updatedAt: string } }) => ({
+          ...request,
+          form: {
+            ...request.form,
+            updatedAt: new Date(request.form.updatedAt)
+          }
+        }));
+
+        console.log("Transformed requests:", transformedRequests); // Debug log
+        setRequests(transformedRequests);
       } catch (error) {
         console.error("Error fetching requests:", error);
         toast.error(error instanceof Error ? error.message : dict.publicRequest.notifications.error.loadFailed);
@@ -246,9 +250,9 @@ export default function PublicRequest() {
         case "oldest":
           return new Date(a.form.updatedAt).getTime() - new Date(b.form.updatedAt).getTime();
         case "pending":
-          return a.accepted === b.accepted ? 0 : a.accepted ? 1 : -1;
+          return Number(b.accepted) - Number(a.accepted); // Convert boolean to number for sorting
         case "accepted":
-          return a.accepted === b.accepted ? 0 : a.accepted ? -1 : 1;
+          return Number(a.accepted) - Number(b.accepted); // Convert boolean to number for sorting
         default:
           return 0;
       }

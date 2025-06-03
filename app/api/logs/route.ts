@@ -8,11 +8,6 @@ import { db } from "@/lib/db";
 // Schema for validating log file names
 const LogFileNameSchema = z.string().regex(/^(combined|error)-\d{4}-\d{2}-\d{2}\.log$/);
 
-// Function to remove ANSI color codes
-function stripAnsiCodes(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, '');
-}
-
 // Function to fetch user names for a list of user IDs
 async function fetchUserNames(userIds: string[]): Promise<Record<string, string>> {
   if (userIds.length === 0) return {};
@@ -73,46 +68,15 @@ export async function GET() {
         logFiles.map(async (file) => {
           console.log("Reading file:", file);
           const content = await fs.readFile(path.join(logsDir, file), "utf-8");
-          const lines = content.split("\n").filter(Boolean);
+          const lines = content.trim().split("\n").filter(Boolean);
           console.log(`Found ${lines.length} lines in ${file}`);
           
           return lines.map(line => {
-            const cleanLine = stripAnsiCodes(line);
-            // Simple parsing for now
-            const parts = cleanLine.split(" ");
-            if (parts.length < 3) return null;
-
-            const timestamp = `${parts[0]} ${parts[1]}`;
-            const level = parts[2].replace(":", "");
-            
-            // Try to extract JSON data
-            const jsonStart = cleanLine.indexOf("{");
-            const jsonEnd = cleanLine.lastIndexOf("}");
-            
-            if (jsonStart === -1 || jsonEnd === -1) {
-              return {
-                timestamp,
-                level,
-                rawMessage: cleanLine
-              };
-            }
-
             try {
-              const jsonStr = cleanLine.slice(jsonStart, jsonEnd + 1);
-              const jsonData = JSON.parse(jsonStr);
-              return {
-                timestamp,
-                level,
-                ...jsonData,
-                rawMessage: cleanLine
-              };
+              return JSON.parse(line);
             } catch (e) {
-              console.error("JSON parse error:", e);
-              return {
-                timestamp,
-                level,
-                rawMessage: cleanLine
-              };
+              console.error("JSON parse error for line:", line, e);
+              return null;
             }
           }).filter(Boolean);
         })
@@ -141,10 +105,10 @@ export async function GET() {
       // Fetch user names
       const userNames = await fetchUserNames(userIds);
 
-      // Add user names to logs
+      // Add user names to logs where they don't already exist
       const logsWithUserNames = logs.map(log => ({
         ...log,
-        userName: log.userId ? userNames[log.userId] : undefined
+        userName: log.userName || (log.userId ? userNames[log.userId] : undefined)
       }));
 
       console.log(`Returning ${logsWithUserNames.length} parsed logs`);

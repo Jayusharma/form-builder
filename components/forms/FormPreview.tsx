@@ -245,15 +245,7 @@ export function FormPreview({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          responses: Object.entries(responses).map(([fieldId, value]) => {
-            const field = form.fields.find(f => f.id === fieldId);
-            return {
-              fieldId,
-              value,
-              question: field?.question || '',
-              type: field?.type || 'TEXT'
-            };
-          })
+          responses: responses
         }),
       });
 
@@ -792,12 +784,21 @@ export function FormPreview({
         if (isReadOnly) return null;
         
         return (
-          <div className="flex justify-end mt-4">
+          <div 
+            className={`form-field transition-colors ${getAlignmentClass()}`}
+            style={{ color: style.textColor }}
+          >
             <Button
               type="submit"
+              style={{
+                backgroundColor: style.primaryColor,
+                color: '#ffffff',
+                width: style.alignment === 'center' ? 'auto' : '100%',
+              }}
               className={cn(
-                "mt-6",
-                form.style?.primaryColor && `bg-[${form.style.primaryColor}]`
+                "h-10 px-8",
+                style.alignment === 'center' ? 'mx-auto' : '',
+                style.alignment === 'right' ? 'ml-auto' : ''
               )}
               disabled={isSubmitting}
             >

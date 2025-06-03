@@ -25,6 +25,8 @@ import { db } from "@/lib/db";
  * 
  * Access Control:
  * - SADMIN: Can view all requests
+ * - MANAGER: Can view all requests
+ * - ADMIN: Can only view their own requests
  * - Other users: Can only view their own requests
  * 
  * Response includes:
@@ -35,25 +37,47 @@ export async function GET() {
   try {
     const session = await auth();
     if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 403 });
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Build where clause based on user role
+    let whereClause = {};
+    
+    switch (session.user.role) {
+      case "SADMIN":
+      case "MANAGER":
+        // SADMIN and MANAGER can see all requests
+        whereClause = {};
+        break;
+      default:
+        // Other roles can only see their own forms' requests
+        whereClause = {
+          form: {
+            userId: session.user.id
+          }
+        };
     }
 
     const requests = await db.publicRequest.findMany({
-      where: {
-        form: {
-          userId: session.user.id
-        }
-      },
+      where: whereClause,
       include: {
         form: {
           include: {
-            user: true
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true
+              }
+            }
           }
         }
       }
     });
 
-    return NextResponse.json({ requests });
+    // Return the requests array directly
+    return NextResponse.json(requests);
   } catch (error) {
     console.error("[FORM_REQUESTS]", error);
     return new NextResponse("Internal Error", { status: 500 });

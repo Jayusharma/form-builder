@@ -41,6 +41,6 @@ export default async function DashboardPage() {
       return <UserDashboard userName={userName} />;
     default:
       // Fallback to user dashboard for unknown roles
-      return redirect("/unauthorized");
+      return redirect("/auth/login");
   }
 }
