@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { formLogger } from '@/lib/formLogger';
+// import { formLogger } from '@/lib/formLogger';
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -16,10 +16,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     
     // Check if user is authenticated
     if (!session?.user) {
-      formLogger.warn('Unauthorized attempt to accept form request', {
-        event: 'FORM_REQUEST_UNAUTHORIZED',
-        userId: 'anonymous'
-      });
+      // formLogger.warn('Unauthorized attempt to accept form request', {
+      //   event: 'FORM_REQUEST_UNAUTHORIZED',
+      //   userId: 'anonymous'
+      // });
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -44,12 +44,12 @@ export async function POST(req: Request, { params }: RouteParams) {
     });
 
     if (!request) {
-      formLogger.warn('Attempt to accept non-existent request', {
-        event: 'FORM_REQUEST_NOT_FOUND',
-        requestId: id,
-        userId: session.user.id,
-        userName: session.user.name
-      });
+      // formLogger.warn('Attempt to accept non-existent request', {
+      //   event: 'FORM_REQUEST_NOT_FOUND',
+      //   requestId: id,
+      //   userId: session.user.id,
+      //   userName: session.user.name
+      // });
       return new NextResponse("Request not found", { status: 404 });
     }
 
@@ -59,15 +59,15 @@ export async function POST(req: Request, { params }: RouteParams) {
       request.form.userId === session.user.id; // Form owner can accept requests for their form
 
     if (!canAcceptRequest) {
-      formLogger.warn('Unauthorized attempt to accept form request', {
-        event: 'FORM_REQUEST_FORBIDDEN',
-        requestId: id,
-        userId: session.user.id,
-        userName: session.user.name,
-        formId: request.formId,
-        formTitle: request.form.title,
-        userRole: session.user.role
-      });
+      // formLogger.warn('Unauthorized attempt to accept form request', {
+      //   event: 'FORM_REQUEST_FORBIDDEN',
+      //   requestId: id,
+      //   userId: session.user.id,
+      //   userName: session.user.name,
+      //   formId: request.formId,
+      //   formTitle: request.form.title,
+      //   userRole: session.user.role
+      // });
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -91,29 +91,29 @@ export async function POST(req: Request, { params }: RouteParams) {
     });
 
     // Log successful request acceptance
-    formLogger.info('Form publication request accepted', {
-      event: 'FORM_REQUEST_ACCEPTED',
-      requestId: id,
-      userId: session.user.id,
-      userName: session.user.name,
-      formId: request.formId,
-      formTitle: request.form.title,
-      formOwner: request.form.userId
-    });
+    // formLogger.info('Form publication request accepted', {
+    //   event: 'FORM_REQUEST_ACCEPTED',
+    //   requestId: id,
+    //   userId: session.user.id,
+    //   userName: session.user.name,
+    //   formId: request.formId,
+    //   formTitle: request.form.title,
+    //   formOwner: request.form.userId
+    // });
 
     return NextResponse.json(result);
   } catch (error) {
     console.error("REQUEST_ACCEPT_ERROR", error);
     // Get the resolved params for error logging
-    const resolvedParams = await params;
-    const session = await auth();
+    // const resolvedParams = await params;
+    // const session = await auth();
     
-    formLogger.error('Error accepting form publication request', {
-      event: 'FORM_REQUEST_ERROR',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      requestId: resolvedParams.id,
-      userId: session?.user?.id || 'unknown'
-    });
+    // formLogger.error('Error accepting form publication request', {
+    //   event: 'FORM_REQUEST_ERROR',
+    //   error: error instanceof Error ? error.message : 'Unknown error',
+    //   requestId: resolvedParams.id,
+    //   userId: session?.user?.id || 'unknown'
+    // });
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

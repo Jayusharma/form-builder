@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { formLogger } from '@/lib/formLogger';
+// import { formLogger } from '@/lib/formLogger';
 
 /**
  * Route Parameters Type
@@ -43,9 +43,9 @@ export async function POST(
     // Verify user authentication
     const session = await auth();
     if (!session?.user) {
-      formLogger.warn("Unauthorized attempt to make form private", {
-        event: 'FORM_REQUEST_UNAUTHORIZED'
-      });
+      // formLogger.warn("Unauthorized attempt to make form private", {
+      //   event: 'FORM_REQUEST_UNAUTHORIZED'
+      // });
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -68,11 +68,11 @@ export async function POST(
 
     // Handle form not found
     if (!form) {
-      formLogger.warn("Attempt to make non-existent form private", {
-        event: 'FORM_REQUEST_NOT_FOUND',
-        formId,
-        userId: session.user.id
-      });
+      // formLogger.warn("Attempt to make non-existent form private", {
+      //   event: 'FORM_REQUEST_NOT_FOUND',
+      //   formId,
+      //   userId: session.user.id
+      // });
       return NextResponse.json(
         { error: "Form not found" },
         { status: 404 }
@@ -81,15 +81,15 @@ export async function POST(
 
     // Prevent redundant privacy changes
     if (!form.isPublished) {
-      formLogger.warn("Attempt to make already private form private", {
-        event: 'FORM_REQUEST_ERROR',
-        formId,
-        formTitle: form.title,
-        userId: session.user.id,
-        additionalInfo: {
-          currentStatus: 'private'
-        }
-      });
+      // formLogger.warn("Attempt to make already private form private", {
+      //   event: 'FORM_REQUEST_ERROR',
+      //   formId,
+      //   formTitle: form.title,
+      //   userId: session.user.id,
+      //   additionalInfo: {
+      //     currentStatus: 'private'
+      //   }
+      // });
       return NextResponse.json(
         { error: "Form is already private" },
         { status: 400 }
@@ -102,17 +102,17 @@ export async function POST(
     const isSAdmin = session.user.role === "SADMIN";
 
     if (!isOwner && !isSAdmin) {
-      formLogger.warn("Unauthorized attempt to make form private", {
-        event: 'FORM_REQUEST_FORBIDDEN',
-        formId,
-        formTitle: form.title,
-        userId: session.user.id,
-        additionalInfo: {
-          isOwner,
-          isSAdmin,
-          formOwnerId: form.userId
-        }
-      });
+      // formLogger.warn("Unauthorized attempt to make form private", {
+      //   event: 'FORM_REQUEST_FORBIDDEN',
+      //   formId,
+      //   formTitle: form.title,
+      //   userId: session.user.id,
+      //   additionalInfo: {
+      //     isOwner,
+      //     isSAdmin,
+      //     formOwnerId: form.userId
+      //   }
+      // });
       return NextResponse.json(
         { error: "You don't have permission to make this form private" },
         { status: 403 }
@@ -144,33 +144,19 @@ export async function POST(
     });
 
     // Log successful privacy change
-    formLogger.logFormMadePrivate({
-      formId,
-      formTitle: form.title,
-      userId: session.user.id,
-      additionalInfo: {
-        userName: session.user.name,
-        userRole: session.user.role,
-        submissionCount: updatedForm._count.submissions
-      }
-    });
+    // formLogger.logFormMadePrivate({
+    //   formId,
+    //   formTitle: form.title,
+    //   userId: session.user.id,
+    //   additionalInfo: {
+    //     userName: session.user.name,
+    //     userRole: session.user.role,
+    //     submissionCount: updatedForm._count.submissions
+    //   }
+    // });
 
     return NextResponse.json(updatedForm);
   } catch (error) {
-    // Get current session and params in catch block to avoid Promise issues
-    const [currentSession, resolvedParams] = await Promise.all([
-      auth(),
-      params
-    ]);
-
-    formLogger.error("Failed to make form private", {
-      event: 'FORM_REQUEST_ERROR',
-      formId: resolvedParams.formId,
-      userId: currentSession?.user?.id,
-      additionalInfo: {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    });
     console.error("[FORM_MAKE_PRIVATE]", error);
     return NextResponse.json(
       { error: "Internal Server Error" },

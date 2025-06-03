@@ -16,7 +16,7 @@ import { db } from "@/lib/db";
 import { FormSchema } from "@/lib/schemas/form";
 import { FormFieldType, Prisma } from "@prisma/client";
 import { ZodError } from "zod";
-import formLogger from "@/lib/formLogger";
+// import formLogger from "@/lib/formLogger";
 
 interface FormField {
   type: FormFieldType;
@@ -185,27 +185,27 @@ export async function POST(req: Request) {
         );
 
         // Log form creation
-        formLogger.logFormCreated({
-          formId: newForm.id,
-          userId: user.id, 
-          formTitle: newForm.title,
-          additionalInfo: {
-            fieldCount: formFields.length,
-            isPublished: false,
-            createdBy: user.role,
-            description: newForm.description || 'No description',
-            fields: formFields.map(field => ({
-              type: field.type,
-              question: field.question,
-              required: field.required,
-              order: field.order
-            })),
-            hasHeader: Boolean(body.header),
-            hasFooter: Boolean(body.footer),
-            style: body.style || {},
-            createdAt: new Date().toISOString()
-          }
-        });
+        // formLogger.logFormCreated({
+        //   formId: newForm.id,
+        //   userId: user.id, 
+        //   formTitle: newForm.title,
+        //   additionalInfo: {
+        //     fieldCount: formFields.length,
+        //     isPublished: false,
+        //     createdBy: user.role,
+        //     description: newForm.description || 'No description',
+        //     fields: formFields.map(field => ({
+        //       type: field.type,
+        //       question: field.question,
+        //       required: field.required,
+        //       order: field.order
+        //     })),
+        //     hasHeader: Boolean(body.header),
+        //     hasFooter: Boolean(body.footer),
+        //     style: body.style || {},
+        //     createdAt: new Date().toISOString()
+        //   }
+        // });
 
         await tx.publicRequest.create({
           data: {
@@ -416,7 +416,7 @@ export async function PATCH(req: Request) {
       }
     });
 
-    await formLogger.info("Form updated", { formId: id, userId: session.user.id });
+    // await formLogger.info("Form updated", { formId: id, userId: session.user.id });
     return NextResponse.json(updatedForm);
   } catch (error) {
     console.error("[FORM_UPDATE]", error);

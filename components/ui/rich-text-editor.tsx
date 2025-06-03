@@ -28,6 +28,25 @@ interface RichTextEditorProps {
 }
 
 const styles = `
+  .editor-content {
+    white-space: pre-wrap !important;
+  }
+
+  .editor-content p {
+    white-space: pre-wrap !important;
+    min-height: 1em;
+    margin: 0 !important;
+  }
+
+  .editor-content p:empty::before {
+    content: "\\00a0";
+    white-space: pre;
+  }
+
+  .editor-content p + p {
+    margin-top: 1em !important;
+  }
+
   .editor-content ol {
     list-style-type: decimal !important;
     margin-left: 1.5rem !important;
@@ -45,18 +64,21 @@ const styles = `
   }
 `;
 
-// Add custom extension for paste handling
-const PastePreserveExtension = Extension.create({
-  name: 'pastePreserve',
+// Custom extension for preserving whitespace and handling paste
+const WhitespacePreserveExtension = Extension.create({
+  name: 'whitespacePreserve',
+
   addGlobalAttributes() {
     return [
       {
-        types: ['paragraph'],
+        types: ['paragraph', 'heading'],
         attributes: {
           preserveWhitespace: {
             default: true,
             parseHTML: () => true,
-            renderHTML: () => ({ style: 'white-space: pre-wrap' }),
+            renderHTML: () => ({ 
+              style: 'white-space: pre-wrap; word-wrap: break-word; min-height: 1em;' 
+            }),
           },
         },
       },
@@ -77,11 +99,11 @@ export function RichTextEditor({
         orderedList: false,
         paragraph: {
           HTMLAttributes: {
-            style: 'white-space: pre-wrap',
+            style: 'white-space: pre-wrap; word-wrap: break-word; min-height: 1em;',
           },
         },
       }),
-      PastePreserveExtension,
+      WhitespacePreserveExtension,
       BulletList.configure({
         HTMLAttributes: {
           class: 'list-disc ml-4',
@@ -105,6 +127,7 @@ export function RichTextEditor({
       }),
       Placeholder.configure({
         placeholder,
+        emptyEditorClass: 'before:content-[attr(data-placeholder)] before:text-muted-foreground before:h-0 before:float-left before:pointer-events-none',
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -118,23 +141,63 @@ export function RichTextEditor({
       onChange(editor.getHTML());
     },
     editorProps: {
+      attributes: {
+        class: 'prose prose-sm max-w-none focus:outline-none',
+        spellcheck: 'false',
+      },
       handlePaste: (view, event) => {
         const clipboardData = event.clipboardData;
         if (!clipboardData) return false;
 
+        // Try to get HTML content first
+        const html = clipboardData.getData('text/html');
+        if (html) {
+          // Let TipTap handle HTML content
+          return false;
+        }
+
+        // If no HTML, handle plain text with preserved whitespace
         const text = clipboardData.getData('text/plain');
         if (!text) return false;
 
-        // Insert the text directly, preserving whitespace
-        const { state } = view;
-        const { tr } = state;
-        const { selection } = state;
+        const { tr } = view.state;
+        const { from, to } = view.state.selection;
 
-        tr.insertText(text, selection.from, selection.to);
+        // Process the text to preserve multiple newlines
+        const processedText = text
+          .replace(/\r\n/g, '\n') // Normalize line endings
+          .replace(/\n{2,}/g, (match) => {
+            // For each group of newlines, create appropriate number of paragraphs
+            return '\n'.repeat(match.length);
+          });
+
+        // Replace selection with processed text
+        tr.insertText(processedText, from, to);
         view.dispatch(tr);
 
         return true;
       },
+      handleKeyDown: (view, event) => {
+        // Handle Enter key to preserve consecutive newlines
+        if (event.key === 'Enter') {
+          const { state } = view;
+          const { selection } = state;
+          const { $from } = selection;
+          
+          // Check if the current line is empty
+          const isEmptyLine = $from.parent.content.size === 0;
+          
+          if (isEmptyLine) {
+            // Create a new paragraph
+            view.dispatch(view.state.tr.split(selection.from));
+            return true;
+          }
+        }
+        return false;
+      },
+    },
+    parseOptions: {
+      preserveWhitespace: 'full',
     },
   });
 

@@ -13,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { formLogger } from "@/lib/formLogger";
+// import { formLogger } from "@/lib/formLogger";
 
 /**
  * Route Parameters Type
@@ -75,15 +75,15 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     });
 
     // Log the request status change
-    await formLogger.info(`Form request status updated to ${accepted}`, {
-      formId: request.formId,
-      userId: session.user.id,
-      metadata: {
-        requestId,
-        oldStatus: request.accepted,
-        newStatus: accepted
-      }
-    });
+    // await formLogger.info(`Form request status updated to ${accepted}`, {
+    //   formId: request.formId,
+    //   userId: session.user.id,
+    //   metadata: {
+    //     requestId,
+    //     oldStatus: request.accepted,
+    //     newStatus: accepted
+    //   }
+    // });
 
     return NextResponse.json(updatedRequest);
   } catch (error) {

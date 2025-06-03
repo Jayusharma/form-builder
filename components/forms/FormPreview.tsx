@@ -933,12 +933,11 @@ export function FormPreview({
                     return (
                       <div 
                         key={field.id} 
-                        className={`form-field p-2 transition-colors ${field.type !== 'RICH_TEXT' ? 'border-2 rounded-sm p-0 m-0' : 'border-0'}`}
+                        className={`form-field p-2 transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0 m-0' : 'border-0'}`}
                         style={{
                           gridColumn: `${gridPos.x + 1} / span ${gridPos.width}`,
                           gridRow: `${gridPos.y + 1} / span ${gridPos.height}`,
                           color: style.textColor,
-                          borderColor: style.textColor,
                         }}
                       >
                         {renderField(field)}

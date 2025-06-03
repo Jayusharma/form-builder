@@ -14,7 +14,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { formLogger } from "@/lib/formLogger";
 
 type RouteParams = {
   params: Promise<{ formId: string }>;
@@ -38,10 +37,6 @@ export async function POST(
 
     // Verify user authentication
     if (!session?.user?.id) {
-      formLogger.warn("Unauthenticated form submission attempt", {
-        event: 'FORM_REQUEST_UNAUTHORIZED',
-        formId
-      });
       return new NextResponse("Authentication required to submit form", { status: 401 });
     }
 
@@ -69,25 +64,10 @@ export async function POST(
     });
 
     if (!form) {
-      formLogger.warn("Attempt to submit to non-existent form", {
-        event: 'FORM_REQUEST_NOT_FOUND',
-        formId,
-        userId: session.user.id
-      });
       return new NextResponse("Form not found", { status: 404 });
     }
 
     if (!form.isPublished) {
-      formLogger.warn("Attempt to submit to unpublished form", {
-        event: 'FORM_REQUEST_ERROR',
-        formId,
-        formTitle: form.title,
-        userId: session.user.id,
-        additionalInfo: {
-          formStatus: 'unpublished',
-          formOwnerId: form.user.id
-        }
-      });
       return new NextResponse("Form is not published", { status: 400 });
     }
 
@@ -97,16 +77,6 @@ export async function POST(
     );
 
     if (!isConnectedToAdmin) {
-      formLogger.warn("Unauthorized form submission attempt - no admin connection", {
-        event: 'FORM_REQUEST_FORBIDDEN',
-        formId,
-        formTitle: form.title,
-        userId: session.user.id,
-        additionalInfo: {
-          formOwnerId: form.user.id,
-          formOwnerName: form.user.name
-        }
-      });
       return new NextResponse(
         "You must be connected to the form creator through an admin code to submit this form", 
         { status: 401 }
@@ -128,17 +98,6 @@ export async function POST(
 
       // Check required fields
       if (field.required && (response === undefined || response === null || response === '')) {
-        formLogger.warn("Form submission rejected - missing required field", {
-          event: 'FORM_REQUEST_ERROR',
-          formId,
-          formTitle: form.title,
-          userId: session.user.id,
-          additionalInfo: {
-            fieldId: field.id,
-            fieldQuestion: field.question,
-            fieldType: field.type
-          }
-        });
         return new NextResponse(
           `Missing required field: ${field.question}`,
           { status: 400 }
@@ -176,38 +135,8 @@ export async function POST(
       }
     });
 
-    // Log successful submission
-    formLogger.logFormSubmitted({
-      formId,
-      formTitle: form.title,
-      userId: session.user.id,
-      additionalInfo: {
-        submissionId: submission.id,
-        fieldCount: form.fields.length,
-        responseCount: Object.keys(processedResponses).length,
-        formOwner: {
-          id: form.user.id,
-          name: form.user.name
-        }
-      }
-    });
-
     return NextResponse.json(submission);
   } catch (error) {
-    // Get current session and params in catch block to avoid Promise issues
-    const [currentSession, resolvedParams] = await Promise.all([
-      auth(),
-      params
-    ]);
-
-    formLogger.error("Failed to process form submission", {
-      event: 'FORM_REQUEST_ERROR',
-      formId: resolvedParams.formId,
-      userId: currentSession?.user?.id,
-      additionalInfo: {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
-    });
     console.error("[FORM_SUBMIT]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
