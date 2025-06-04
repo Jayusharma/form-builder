@@ -417,10 +417,13 @@ export function FormPreview({
             </Label>
             {isReadOnly ? (
               <div 
-                className={`p-2 text-sm ${getAlignmentClass()}`}
+                className={`p-2 text-sm break-words whitespace-pre-wrap ${getAlignmentClass()}`}
                 style={{ 
                   ...commonInputStyle,
                   backgroundColor: `${style.backgroundColor}80`,
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  minHeight: '40px'
                 }}
               >
                 {String(fieldValue || 'N/A')}
@@ -452,11 +455,14 @@ export function FormPreview({
             </Label>
             {isReadOnly ? (
               <div 
-                className={`p-2 bg-gray-50/50 text-sm whitespace-pre-wrap ${getAlignmentClass()}`}
+                className={`p-2 bg-gray-50/50 text-sm whitespace-pre-wrap break-words ${getAlignmentClass()}`}
                 style={{ 
                   fontFamily: style.fontFamily,
                   color: style.textColor,
                   backgroundColor: `${style.backgroundColor}80`,
+                  maxHeight: '500px',
+                  overflowY: 'auto',
+                  minHeight: '80px'
                 }}
               >
                 {String(fieldValue || 'N/A')}
@@ -534,10 +540,13 @@ export function FormPreview({
               {field.required && !isReadOnly && <span className="text-red-500 ml-1">*</span>}
             </Label>
             {isReadOnly ? (
-              <div className="p-2 bg-gray-50/50 text-sm" style={{ 
+              <div className="p-2 bg-gray-50/50 text-sm break-words" style={{ 
                 fontFamily: style.fontFamily,
                 color: style.textColor,
                 backgroundColor: `${style.backgroundColor}80`,
+                maxHeight: '300px',
+                overflowY: 'auto',
+                minHeight: '40px'
               }}>
                 {Array.isArray(fieldValue) ? fieldValue.join(', ') : 'N/A'}
               </div>

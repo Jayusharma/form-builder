@@ -218,6 +218,9 @@ export async function POST(req: Request) {
           ...newForm,
           fields: formFields,
         };
+      }, {
+        timeout: 10000, // Increased timeout to 10 seconds
+        maxWait: 15000, // Maximum time to wait for transaction to start
       });
 
       return NextResponse.json(result);
@@ -228,6 +231,17 @@ export async function POST(req: Request) {
           code: error.code,
           meta: error.meta,
         });
+
+        // Check for transaction timeout
+        if (error.code === 'P2028') {
+          return NextResponse.json(
+            { 
+              error: "Transaction timeout",
+              message: "The form creation took too long. Please try again with fewer fields or contact support if the issue persists."
+            },
+            { status: 408 }
+          );
+        }
 
         // Check for specific database errors
         if (error.code === "P2002") {
