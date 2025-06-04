@@ -219,8 +219,8 @@ export async function POST(req: Request) {
           fields: formFields,
         };
       }, {
-        timeout: 10000, // Increased timeout to 10 seconds
-        maxWait: 15000, // Maximum time to wait for transaction to start
+        timeout: 20000, // Increased timeout to 10 seconds
+        maxWait: 25000, // Maximum time to wait for transaction to start
       });
 
       return NextResponse.json(result);
