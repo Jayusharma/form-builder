@@ -1059,7 +1059,7 @@ export function FormPreview({
 
       case 'SEPARATOR':
         return (
-          <div className="w-full pt-4">
+          <div className="w-full py-4">
             <div 
               className="h-[3px] w-full" 
               style={{ 
@@ -1197,7 +1197,7 @@ export function FormPreview({
                   ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
                   text-sm
                 `}>
-                  <div className="grid grid-cols-12 auto-rows-auto gap-3 w-full">
+                  <div className="grid grid-cols-12 grid-auto-rows-min">
                     {((): React.ReactNode => {
                       const sections: Array<{
                         fields: typeof fieldsToRender;
@@ -1225,21 +1225,18 @@ export function FormPreview({
                           key={sectionIndex}
                           className="col-span-12"
                         >
-                          <div className="grid grid-cols-12 gap-3 p-3 ">
+                          <div className="grid grid-cols-12 grid-auto-rows-min">
                             {section.fields.map((field) => {
                               const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
-                              const rowStart = gridPos.y + 1;
-                              const rowSpan = gridPos.height;
-                              const colStart = gridPos.x + 1;
-                              const colSpan = gridPos.width;
-
+                              
                               return (
                                 <div 
                                   key={field.id} 
-                                  className={`form-field transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0 m-0' : 'border-0'}`}
+                                  className={`form-field transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0' : 'border-0'} ${gridPos.y > 0 ? 'mt-2' : ''}`}
                                   style={{
-                                    gridColumn: `${colStart} / span ${colSpan}`,
-                                    gridRow: `${rowStart} / span ${rowSpan}`,
+                                    gridColumnStart: gridPos.x + 1,
+                                    gridColumnEnd: `span ${gridPos.width}`,
+                                    gridRow: gridPos.y + 1,
                                     color: style.textColor,
                                   }}
                                 >
@@ -1248,7 +1245,11 @@ export function FormPreview({
                               );
                             })}
                           </div>
-                          {section.separator && renderField(section.separator)}
+                          {section.separator && (
+                            <div className="w-full">
+                              {renderField(section.separator)}
+                            </div>
+                          )}
                         </div>
                       ));
                     })()}
