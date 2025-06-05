@@ -104,6 +104,8 @@ const fieldTypeDefaultHeight: Record<FormFieldType, number> = {
   DROPDOWN: 1,
   IMAGE_UPLOAD: 1,
   SUBMIT: 1,
+  TEXT_WITH_CHECKBOX: 1,
+  SEPARATOR: 1,
 };
 
 /**
@@ -149,6 +151,8 @@ const fieldTypes: Array<{
   { type: 'CHECKBOX', label: 'Checkboxes', icon: CheckSquareIcon, defaultWidth: 6 },
   { type: 'DROPDOWN', label: 'Dropdown', icon: ChevronDownIcon, defaultWidth: 6 },
   { type: 'IMAGE_UPLOAD', label: 'Image Upload', icon: ImageIcon, defaultWidth: 6 },
+  { type: 'TEXT_WITH_CHECKBOX', label: 'Text + Checkbox', icon: CheckSquareIcon, defaultWidth: 8 },
+  { type: 'SEPARATOR', label: 'Separator', icon: MinusIcon, defaultWidth: 12 },
 ];
 
 /**
@@ -340,6 +344,38 @@ function GridItem({
   dict: FieldDetailsModalProps['dict'];
 }) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  // Special rendering for separator field
+  if (field.type === 'SEPARATOR') {
+    return (
+      <div className="h-[40px] flex flex-col overflow-hidden relative" style={{
+        backgroundColor: 'transparent',
+      }}>
+        <div className="flex items-center justify-between w-full h-full px-2">
+          <div className="flex items-center gap-1.5 flex-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="drag-handle h-6 w-6 cursor-grab active:cursor-grabbing shrink-0 hover:bg-transparent"
+              type="button"
+            >
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground/70" />
+            </Button>
+            <div className="flex-1 h-[3px] bg-border opacity-50" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(field.id)}
+              className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-transparent"
+              type="button"
+            >
+              <Trash2Icon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="h-[40px] flex flex-col overflow-hidden" style={{
@@ -638,6 +674,22 @@ function FieldDetailsModal({
                 options={currentFieldData.options || ['Option 1',]}
                 onUpdate={handleOptionsChange}
                 fieldType={currentFieldType}
+                dict={{
+                  addOption: dict.addOption,
+                  removeOption: dict.removeOption,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Options for TEXT_WITH_CHECKBOX */}
+          {currentFieldType === 'TEXT_WITH_CHECKBOX' && (
+            <div className="space-y-2">
+              <Label>{dict.options}</Label>
+              <OptionManager
+                options={currentFieldData.options || ['Yes']}
+                onUpdate={handleOptionsChange}
+                fieldType="CHECKBOX"
                 dict={{
                   addOption: dict.addOption,
                   removeOption: dict.removeOption,
@@ -1152,7 +1204,16 @@ export function GridFormBuilder({ dict, searchParams }: GridFormBuilderProps) {
       }
       return field;
     });
-    setFields(updatedFields);
+
+    // Sort fields by vertical position to maintain consistent order
+    const sortedFields = [...updatedFields].sort((a, b) => {
+      if (a.y === b.y) {
+        return a.x - b.x; // If same row, sort by x position
+      }
+      return a.y - b.y;
+    });
+
+    setFields(sortedFields);
   };
 
   /**
@@ -1559,9 +1620,9 @@ export function GridFormBuilder({ dict, searchParams }: GridFormBuilderProps) {
                     containerPadding={GRID_CONFIG.containerPadding as [number, number]}
                     onLayoutChange={onLayoutChange}
                     compactType="vertical"
-                    isDroppable={false}
-                    draggableHandle=".drag-handle"
                     preventCollision={false}
+                    isDroppable={true}
+                    draggableHandle=".drag-handle"
                     useCSSTransforms={true}
                     style={{ 
                       minHeight: '400px',
@@ -1634,12 +1695,24 @@ export function GridFormBuilder({ dict, searchParams }: GridFormBuilderProps) {
                       required: field.required,
                       options: field.options,
                       description: field.description || undefined,
-                      gridPosition: { x: field.x, y: field.y, width: field.w, height: field.h },
-                    })),
+                      gridPosition: {
+                        x: field.x,
+                        y: field.y,
+                        width: field.w,
+                        height: field.h
+                      },
+                    })).sort((a, b) => {
+                      // Sort fields by vertical position for consistent preview
+                      const aPos = a.gridPosition;
+                      const bPos = b.gridPosition;
+                      if (aPos.y === bPos.y) {
+                        return aPos.x - bPos.x; // If same row, sort by x position
+                      }
+                      return aPos.y - bPos.y; // Sort by y position
+                    }),
                     style: {
-                      width: formStyle.width,
-                      alignment: formStyle.alignment,
-                      spacing: formStyle.spacing,
+                      ...formStyle,
+                      width: formStyle.width || 'medium',
                       backgroundColor: formStyle.backgroundColor || '#ffffff',
                       textColor: formStyle.textColor || '#000000',
                       borderColor: formStyle.borderColor || '#e5e7eb',

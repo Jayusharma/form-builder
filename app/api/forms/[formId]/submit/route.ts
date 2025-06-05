@@ -19,7 +19,11 @@ type RouteParams = {
   params: Promise<{ formId: string }>;
 };
 
-type ProcessedResponses = Record<string, string | string[] | null>;
+type TextWithCheckboxResponse = {
+  items: Array<{ checked: boolean; text: string }>;
+};
+
+type ProcessedResponses = Record<string, string | string[] | null | TextWithCheckboxResponse>;
 
 /**
  * POST /api/forms/[formId]/submit
@@ -122,6 +126,16 @@ export async function POST(
           break;
         case 'RICH_TEXT':
           // Rich text fields don't need responses
+          break;
+        case 'TEXT_WITH_CHECKBOX':
+          // Handle text with checkbox responses
+          if (response && typeof response === 'object' && 'items' in response) {
+            processedResponses[field.id] = response;
+          } else {
+            processedResponses[field.id] = {
+              items: field.options?.map(() => ({ checked: false, text: '' })) || []
+            };
+          }
           break;
       }
     }

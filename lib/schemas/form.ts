@@ -27,6 +27,8 @@ import { z } from 'zod';
  * - SUBMIT: Submit button
  * - IMAGE_UPLOAD: Image upload field
  * - RICH_TEXT: Rich text editor
+ * - TEXT_WITH_CHECKBOX: Text input with associated checkboxes
+ * - SEPARATOR: Separator between form sections
  */
 export const FormFieldTypeEnum = z.enum([
   'TEXT',
@@ -36,7 +38,9 @@ export const FormFieldTypeEnum = z.enum([
   'DROPDOWN',
   'SUBMIT',
   'IMAGE_UPLOAD',
-  'RICH_TEXT'
+  'RICH_TEXT',
+  'TEXT_WITH_CHECKBOX',
+  'SEPARATOR'
 ]);
 
 /**
@@ -46,7 +50,7 @@ export const FormFieldTypeEnum = z.enum([
  * @property {string} formId - Required form identifier
  * @property {Record<string, any>} responses - Form responses with validation
  *   - Must contain at least one response
- *   - Responses can be strings, numbers, booleans, or string arrays
+ *   - Responses can be strings, numbers, booleans, string arrays, or text-with-checkbox objects
  */
 export const FormSubmissionSchema = z.object({
   formId: z.string().min(1, "Form ID is required"),
@@ -56,6 +60,12 @@ export const FormSubmissionSchema = z.object({
       z.number(),
       z.boolean(),
       z.array(z.string()).min(1, "At least one option must be selected"),
+      z.object({
+        items: z.array(z.object({
+          checked: z.boolean(),
+          text: z.string()
+        }))
+      })
     ])
   ).refine(
     (responses) => Object.keys(responses).length > 0,

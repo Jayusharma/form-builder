@@ -211,6 +211,8 @@ model TwofactorConfirmation {
  * - SUBMIT: Submit button
  * - IMAGE_UPLOAD: Image upload field
  * - RICH_TEXT: Rich text editor
+ * - TEXT_WITH_CHECKBOX: Text input with associated checkboxes
+ * - SEPARATOR: Form field separator
  */
 enum FormFieldType {
   TEXT
@@ -221,6 +223,8 @@ enum FormFieldType {
   SUBMIT
   IMAGE_UPLOAD
   RICH_TEXT
+  TEXT_WITH_CHECKBOX
+  SEPARATOR
 }
 
 /**

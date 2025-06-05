@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "FormFieldType" ADD VALUE 'TEXT_WITH_CHECKBOX';

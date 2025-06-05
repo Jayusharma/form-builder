@@ -24,13 +24,14 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { FormField, FormStyle, } from '@/lib/schemas/form';
+import { FormField } from '@/lib/schemas/form';
 import { useToast } from '@/components/ui/use-toast';
 import { PrinterIcon, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useDictionary } from '@/hooks/useDictionary';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 /**
  * Grid layout configuration constants
@@ -40,30 +41,91 @@ import { cn } from '@/lib/utils';
 // const GRID_COLUMNS = 12; // 12-column grid system
 // const MOBILE_BREAKPOINT = 640; // sm breakpoint
 
-// Define specific types for different field values
-export type TextValue = string;
-export type ParagraphValue = string;
-export type MultipleChoiceValue = string;
-export type CheckboxValue = string[];
-export type DropdownValue = string;
-export type ImageValue = string;
-export type RichTextValue = string;
+// Type definitions for form field values
+type TextValue = string;
+type ParagraphValue = string;
+type MultipleChoiceValue = string;
+type CheckboxValue = string[];
+type DropdownValue = string;
+type ImageValue = string | null;
+type RichTextValue = string;
+type TextWithCheckboxValue = {
+  items: Array<{
+    checked: boolean;
+    text: string;
+  }>;
+};
+
+// Form width type
+type FormWidth = 'small' | 'medium' | 'large';
+type FormAlignment = 'left' | 'center' | 'right';
+type FormSpacing = 'comfortable' | 'compact' | 'spacious';
+type FormBorderRadius = 'sm' | 'md' | 'lg';
 
 // Combined type for all possible form response values
-export type FormResponseValue = TextValue | ParagraphValue | MultipleChoiceValue | CheckboxValue | DropdownValue | ImageValue | RichTextValue | null;
+export type FormResponseValue = 
+  | TextValue 
+  | ParagraphValue 
+  | MultipleChoiceValue 
+  | CheckboxValue 
+  | DropdownValue 
+  | ImageValue 
+  | RichTextValue 
+  | TextWithCheckboxValue;
 
-export interface FormResponseData {
-  [key: string]: FormResponseValue;
-}
+// Form field types
+export type FormFieldType = 
+  | 'TEXT'
+  | 'PARAGRAPH'
+  | 'MULTIPLE_CHOICE'
+  | 'CHECKBOX'
+  | 'DROPDOWN'
+  | 'SUBMIT'
+  | 'IMAGE_UPLOAD'
+  | 'RICH_TEXT'
+  | 'TEXT_WITH_CHECKBOX'
+  | 'SEPARATOR';
+
+// Update FormStyle type to match the schema
+type FormStyle = {
+  width: FormWidth;
+  alignment: FormAlignment;
+  spacing: FormSpacing;
+  borderRadius: FormBorderRadius;
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  fontFamily: string;
+  headingFontSize: string;
+  bodyFontSize: string;
+  primaryColor: string;
+};
+
+// Form response data type
+export type FormResponseData = Record<string, FormResponseValue>;
 
 /**
  * Gets the field value with proper type handling
  */
-function getFieldValue(value: FormResponseValue | undefined, fieldType: string): string | string[] | null {
+function getFieldValue(value: FormResponseValue | undefined, fieldType: string): string | string[] | undefined {
   if (value === undefined || value === null) {
     return fieldType === 'CHECKBOX' ? [] : '';
   }
-  return value;
+  
+  // Handle specific field types
+  switch (fieldType) {
+    case 'CHECKBOX':
+      return Array.isArray(value) ? value : [];
+    case 'TEXT_WITH_CHECKBOX':
+      if (typeof value === 'object' && 'items' in value) {
+        return value.items
+          .filter(item => item.checked)
+          .map(item => `${item.text}`);
+      }
+      return [];
+    default:
+      return String(value);
+  }
 }
 
 /**
@@ -113,32 +175,30 @@ interface FormPreviewProps {
  */
 function processFormStyle(rawStyle: unknown): FormStyle {
   try {
-    // Try to parse the style if it's a string, otherwise use as is
     const style = typeof rawStyle === 'string' 
       ? JSON.parse(rawStyle) 
       : rawStyle;
 
     if (style && typeof style === 'object') {
-      // Ensure all style properties have valid values with proper type assertions
+      const borderRadius = style.borderRadius === 'none' ? 'md' : style.borderRadius;
       return {
-        width: (style.width as 'small' | 'medium' | 'large') || 'medium',
-        alignment: (style.alignment as 'left' | 'center' | 'right') || 'left',
-        spacing: (style.spacing as 'comfortable' | 'compact' | 'spacious') || 'comfortable',
-        borderRadius: (style.borderRadius as 'md' | 'sm' | 'lg') || 'md',
+        width: (style.width as FormWidth) || 'medium',
+        alignment: (style.alignment as FormAlignment) || 'left',
+        spacing: (style.spacing as FormSpacing) || 'comfortable',
+        borderRadius: (borderRadius as FormBorderRadius) || 'md',
         backgroundColor: String(style.backgroundColor || '#ffffff'),
         textColor: String(style.textColor || '#000000'),
-        primaryColor: String(style.primaryColor || '#2563eb'),
         borderColor: String(style.borderColor || '#e5e7eb'),
-        fontFamily: String(style.fontFamily || 'inter'),
-        headingFontSize: String(style.headingFontSize || '2xl'),
-        bodyFontSize: String(style.bodyFontSize || 'base'),
+        fontFamily: String(style.fontFamily || 'Inter'),
+        headingFontSize: String(style.headingFontSize || '1.5rem'),
+        bodyFontSize: String(style.bodyFontSize || '1rem'),
+        primaryColor: String(style.primaryColor || '#2563eb'),
       };
     }
   } catch (error) {
     console.warn('Error processing form style:', error);
   }
 
-  // Default style if style parsing fails or is invalid
   return {
     width: 'medium',
     alignment: 'left',
@@ -146,12 +206,107 @@ function processFormStyle(rawStyle: unknown): FormStyle {
     borderRadius: 'md',
     backgroundColor: '#ffffff',
     textColor: '#000000',
-    primaryColor: '#2563eb',
     borderColor: '#e5e7eb',
-    fontFamily: 'inter',
-    headingFontSize: '2xl',
-    bodyFontSize: 'base',
+    fontFamily: 'Inter',
+    headingFontSize: '1.5rem',
+    bodyFontSize: '1rem',
+    primaryColor: '#2563eb',
   };
+}
+
+// Add this component for TEXT_WITH_CHECKBOX field type
+function TextWithCheckboxField({ 
+  field, 
+  value, 
+  onChange,
+  style,
+}: { 
+  field: FormField; 
+  value: TextWithCheckboxValue; 
+  onChange: (value: TextWithCheckboxValue) => void;
+  style: FormStyle;
+}) {
+  const getBorderRadiusStyle = (borderRadius: string) => {
+    return borderRadius === 'none' ? '0' : undefined;
+  };
+
+  // Initialize value.items if it doesn't exist or has different length than options
+  const items = value.items || field.options?.map(() => ({ checked: false, text: '' })) || [];
+
+  const commonInputStyle = {
+    color: style.textColor,
+    fontFamily: style.fontFamily,
+    borderColor: style.borderColor || '#e5e7eb',
+    backgroundColor: 'transparent',
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium" style={{ color: style.textColor }}>
+        {field.question}
+      </Label>
+      <div className="space-y-3">
+        {field.options?.map((option, index) => (
+          <div 
+            key={index} 
+            className="group space-y-2"
+          >
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`${field.id}-option-${index}`}
+                checked={items[index]?.checked || false}
+                onCheckedChange={(checked) => {
+                  const newItems = [...items];
+                  newItems[index] = {
+                    ...newItems[index],
+                    checked: Boolean(checked),
+                    text: Boolean(checked) ? (newItems[index]?.text || '') : ''
+                  };
+                  onChange({ items: newItems });
+                }}
+                className="transition-transform group-hover:scale-105"
+                style={{
+                  borderColor: style.borderColor,
+                  borderRadius: getBorderRadiusStyle(style.borderRadius),
+                }}
+              />
+              <Label 
+                htmlFor={`${field.id}-option-${index}`}
+                className="text-sm font-medium transition-colors group-hover:text-gray-900"
+                style={{ color: style.textColor }}
+              >
+                {option}
+              </Label>
+            </div>
+            {items[index]?.checked && (
+              <div className="pl-6">
+                <Input
+                  id={`${field.id}-text-${index}`}
+                  type="text"
+                  value={items[index]?.text || ''}
+                  onChange={(e) => {
+                    const newItems = [...items];
+                    newItems[index] = {
+                      ...newItems[index],
+                      text: e.target.value
+                    };
+                    onChange({ items: newItems });
+                  }}
+                  placeholder={`Enter details for ${option}...`}
+                  className="w-full py-1 px-2 h-7 text-sm border rounded-md transition-all focus:ring-1 focus:ring-primary/20"
+                  style={{
+                    ...commonInputStyle,
+                    textAlign: style.alignment === 'center' ? 'center' : 
+                             style.alignment === 'right' ? 'right' : 'left',
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -175,6 +330,7 @@ export function FormPreview({
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const dict = useDictionary();
+  const router = useRouter();
 
   // Use submissionResponses in read-only mode
   const currentResponses = isReadOnly ? submissionResponses : responses;
@@ -403,6 +559,20 @@ export function FormPreview({
       backgroundColor: 'rgba(243, 244, 246, 0.5)', // Light grey with transparency
     };
 
+    // Helper function to get simple value
+    const getSimpleValue = (value: FormResponseValue | undefined): string => {
+      if (value === undefined || value === null) return '';
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value.join(', ');
+      if (typeof value === 'object' && 'items' in value) {
+        return value.items
+          .filter(item => item.checked)
+          .map(item => item.text)
+          .join(', ');
+      }
+      return String(value);
+    };
+
     switch (field.type) {
       case 'TEXT':
         return (
@@ -426,13 +596,13 @@ export function FormPreview({
                   minHeight: '40px'
                 }}
               >
-                {String(fieldValue || 'N/A')}
+                {getSimpleValue(fieldValue) || 'N/A'}
               </div>
             ) : (
               <Input
                 id={field.id}
                 name={field.id}
-                value={fieldValue || ''}
+                value={typeof fieldValue === 'string' ? fieldValue : getSimpleValue(fieldValue)}
                 onChange={(e) => setResponses(prev => ({ ...prev, [field.id]: e.target.value }))}
                 required={field.required}
                 className={commonClasses}
@@ -465,13 +635,13 @@ export function FormPreview({
                   minHeight: '80px'
                 }}
               >
-                {String(fieldValue || 'N/A')}
+                {getSimpleValue(fieldValue) || 'N/A'}
               </div>
             ) : (
               <Textarea
                 id={field.id}
                 name={field.id}
-                value={fieldValue || ''}
+                value={typeof fieldValue === 'string' ? fieldValue : getSimpleValue(fieldValue)}
                 onChange={(e) => setResponses(prev => ({ ...prev, [field.id]: e.target.value }))}
                 required={field.required}
                 className={`${commonClasses} h-20`}
@@ -505,7 +675,7 @@ export function FormPreview({
               </div>
             ) : (
               <RadioGroup
-                value={getFieldValue(fieldValue, 'RADIO') as string}
+                value={String(getFieldValue(fieldValue, 'RADIO') || '')}
                 onValueChange={(value) => setResponses(prev => ({ ...prev, [field.id]: value }))}
                 required={field.required}
                 className="flex flex-wrap gap-4"
@@ -515,8 +685,11 @@ export function FormPreview({
                     <RadioGroupItem
                       value={option}
                       id={`${field.id}-${index}`}
-                      className="h-3 w-3 border-gray-300"
-                      style={{ borderColor: style.borderColor }}
+                      className="h-3 w-3 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 border data-[state=checked]:bg-transparent data-[state=checked]:border-[3px]"
+                      style={{ 
+                        color: style.textColor,
+                        borderColor: style.textColor,
+                      }}
                     />
                     <Label
                       htmlFor={`${field.id}-${index}`}
@@ -598,7 +771,7 @@ export function FormPreview({
               </div>
             ) : (
               <Select
-                value={getFieldValue(fieldValue, 'SELECT') as string}
+                value={String(getFieldValue(fieldValue, 'SELECT') || '')}
                 onValueChange={(value) => setResponses(prev => ({ ...prev, [field.id]: value }))}
                 required={field.required}
               >
@@ -789,6 +962,74 @@ export function FormPreview({
           </div>
         );
 
+      case 'TEXT_WITH_CHECKBOX':
+        const textWithCheckboxDefaultValue: TextWithCheckboxValue = {
+          items: field.options?.map(() => ({ checked: false, text: '' })) || []
+        };
+        const currentTextWithCheckboxValue = (currentResponses?.[field.id] as TextWithCheckboxValue) || textWithCheckboxDefaultValue;
+        
+        if (isReadOnly) {
+          // Filter to show only checked items
+          const checkedItems = currentTextWithCheckboxValue.items
+            .map((item, index) => ({ ...item, option: field.options?.[index] }))
+            .filter(item => item.checked);
+
+          return (
+            <div className="space-y-4">
+              <Label className="text-sm font-medium" style={{ color: style.textColor }}>
+                {field.question}
+              </Label>
+              <div className="space-y-2">
+                {checkedItems.map((item, index) => (
+                  <div key={index} className="flex items-start space-x-2">
+                    <div className="flex items-center h-9 pt-1">
+                      <Checkbox
+                        checked={true}
+                        disabled={true}
+                        style={{
+                          borderColor: style.borderColor,
+                          cursor: 'default'
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <Label 
+                        className="text-sm font-normal block"
+                        style={{ color: style.textColor }}
+                      >
+                        {item.option}
+                      </Label>
+                      <div 
+                        className="p-2 bg-gray-50/50 text-sm break-words"
+                        style={{ 
+                          fontFamily: style.fontFamily,
+                          color: style.textColor,
+                          backgroundColor: `${style.backgroundColor}80`,
+                          minHeight: '32px'
+                        }}
+                      >
+                        {item.text || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {checkedItems.length === 0 && (
+                  <div className="text-sm text-gray-500">No options selected</div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <TextWithCheckboxField
+            field={field}
+            value={currentTextWithCheckboxValue}
+            onChange={(value) => setResponses(prev => ({ ...prev, [field.id]: value }))}
+            style={style}
+          />
+        );
+
       case 'SUBMIT':
         if (isReadOnly) return null;
         
@@ -813,6 +1054,19 @@ export function FormPreview({
             >
               {isSubmitting ? dict.formPreview.buttons.preparing : dict.formPreview.buttons.submit}
             </Button>
+          </div>
+        );
+
+      case 'SEPARATOR':
+        return (
+          <div className="w-full pt-4">
+            <div 
+              className="h-[3px] w-full" 
+              style={{ 
+                backgroundColor: style.textColor,
+                opacity: 0.15
+              }} 
+            />
           </div>
         );
 
@@ -898,7 +1152,7 @@ export function FormPreview({
                   <div className="flex justify-center gap-4 mt-4">
                     <Button
                       variant="default"
-                      onClick={() => window.close()}
+                      onClick={() => router.push('/dashboard?tab=forms')}
                       className="rounded-none"
                       style={{
                         backgroundColor: style.primaryColor,
@@ -935,67 +1189,109 @@ export function FormPreview({
                   )}
                 </div>
 
-                <div className={`grid grid-cols-12 gap-3 w-full mt-4 ${getAlignmentClass()}`}>
-                  {fieldsToRender.map((field) => {
-                    const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
-                    
-                    return (
-                      <div 
-                        key={field.id} 
-                        className={`form-field p-2 transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0 m-0' : 'border-0'}`}
-                        style={{
-                          gridColumn: `${gridPos.x + 1} / span ${gridPos.width}`,
-                          gridRow: `${gridPos.y + 1} / span ${gridPos.height}`,
-                          color: style.textColor,
-                        }}
-                      >
-                        {renderField(field)}
-                      </div>
-                    );
-                  })}
+                <div className={`
+                  w-full
+                  ${getSpacingClass()} 
+                  p-4
+                  ${getBorderRadiusClass()} 
+                  ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
+                  text-sm
+                `}>
+                  <div className="grid grid-cols-12 auto-rows-auto gap-3 w-full">
+                    {((): React.ReactNode => {
+                      const sections: Array<{
+                        fields: typeof fieldsToRender;
+                        separator?: typeof fieldsToRender[0];
+                      }> = [];
+                      let currentSection: typeof fieldsToRender = [];
+
+                      fieldsToRender.forEach((field) => {
+                        if (field.type === 'SEPARATOR') {
+                          if (currentSection.length > 0) {
+                            sections.push({ fields: currentSection, separator: field });
+                            currentSection = [];
+                          }
+                        } else {
+                          currentSection.push(field);
+                        }
+                      });
+
+                      if (currentSection.length > 0) {
+                        sections.push({ fields: currentSection });
+                      }
+
+                      return sections.map((section, sectionIndex) => (
+                        <div 
+                          key={sectionIndex}
+                          className="col-span-12"
+                        >
+                          <div className="grid grid-cols-12 gap-3 p-3 ">
+                            {section.fields.map((field) => {
+                              const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
+                              const rowStart = gridPos.y + 1;
+                              const rowSpan = gridPos.height;
+                              const colStart = gridPos.x + 1;
+                              const colSpan = gridPos.width;
+
+                              return (
+                                <div 
+                                  key={field.id} 
+                                  className={`form-field transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0 m-0' : 'border-0'}`}
+                                  style={{
+                                    gridColumn: `${colStart} / span ${colSpan}`,
+                                    gridRow: `${rowStart} / span ${rowSpan}`,
+                                    color: style.textColor,
+                                  }}
+                                >
+                                  {renderField(field)}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {section.separator && renderField(section.separator)}
+                        </div>
+                      ));
+                    })()}
+                  </div>
                 </div>
+
+                {/* Form ID and submission date footer */}
+                <div className="flex justify-center">
+                  <div className="text-[10px] opacity-40 text-center" style={{ color: style.textColor }}>
+                    {form.id}
+                    {isReadOnly && submissionDate && (
+                      <> • {new Date(submissionDate).toLocaleString()}</>
+                    )}
+                  </div>
+                </div>
+
+                {form.footer && (
+                  <div className="border-t border-border p-4 flex items-center gap-4">
+                    {form.footer.logo && (
+                      <div className="flex-shrink-0">
+                        <Image
+                          src={form.footer.logo}
+                          alt="Footer Logo"
+                          width={48}
+                          height={48}
+                          className="h-12 w-auto object-contain"
+                        />
+                      </div>
+                    )}
+                    {form.footer.text && (
+                      <div 
+                        className="prose prose-sm max-w-none flex-1"
+                        dangerouslySetInnerHTML={{ __html: form.footer.text }}
+                        style={{ color: style.textColor }}
+                      />
+                    )}
+                  </div>
+                )}
               </>
             )}
           </form>
-
-          <div className="flex justify-center">
-            <div className="text-[10px] opacity-40 text-center" style={{ color: style.textColor }}>
-              {form.id} • {isReadOnly && submissionDate && new Date(submissionDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-              })}
-            </div>
-          </div>
-
-          {form.footer && (
-            <div className="border-t border-border p-4 flex items-center gap-4">
-              {form.footer.logo && (
-                <div className="flex-shrink-0">
-                  <Image
-                    src={form.footer.logo}
-                    alt="Footer Logo"
-                    width={48}
-                    height={48}
-                    className="h-12 w-auto object-contain"
-                  />
-                </div>
-              )}
-              {form.footer.text && (
-                <div 
-                  className="prose prose-sm max-w-none flex-1"
-                  dangerouslySetInnerHTML={{ __html: form.footer.text }}
-                  style={{ color: style.textColor }}
-                />
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
-} 
+}
