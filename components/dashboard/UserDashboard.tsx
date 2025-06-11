@@ -21,10 +21,11 @@ import React, { useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MySubmissions from "./MySubmissions";
+// import MySubmissions from "./MySubmissions";
 import AdminForms from "./AdminForms";
 import { useDictionary } from "@/hooks/useDictionary";
 import { useRouter, useSearchParams } from "next/navigation";
+import FormResponses from "../forms/FormResponses";
 
 /**
  * UserDashboardProps Interface
@@ -154,7 +155,8 @@ function DashboardContent({ userName }: UserDashboardProps) {
               <CardDescription>{dict.dashboard.user.descriptions.submissions}</CardDescription>
             </CardHeader>
             <CardContent>
-              <MySubmissions />
+            <FormResponses userRole="USER" />
+              {/* <MySubmissions /> */}
             </CardContent>
           </Card>
         </TabsContent>

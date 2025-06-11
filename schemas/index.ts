@@ -29,6 +29,8 @@ export const SettingsSchema = z.object({
   isTwoFactorEnabled: z.optional(z.boolean()),
   Newpassword: z.optional(z.string().min(6)),
   bio: z.optional(z.string()),
+  phone: z.optional(z.string()),
+  location: z.optional(z.string()),
 }).refine((data) => {
   // If either password field is filled, both must be filled
   if (data.password || data.Newpassword) {

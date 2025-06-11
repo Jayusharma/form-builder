@@ -193,6 +193,7 @@ export interface FormField {
   required: boolean;
   options?: string[];
   description?: string;
+  order?: number;
   gridPosition: GridPosition;
 }
 

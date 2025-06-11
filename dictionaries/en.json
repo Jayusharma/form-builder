@@ -439,6 +439,19 @@
           "label": "New Password",
           "placeholder": "Enter your new password"
         }
+        
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "Enter your phone number"
+      },
+      "location": {
+        "label": "Location",
+        "placeholder": "Enter your location"
+      },
+      "bio": {
+        "label": "Bio",
+        "placeholder": "Enter your bio"
       },
       "twoFactor": {
         "label": "Two Factor Authentication",
@@ -491,6 +504,18 @@
           "admin": "Admin",
           "sadmin": "Super Admin"
         }
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "Enter user phone"
+      },
+      "location": {
+        "label": "Location",
+        "placeholder": "Enter user location"
+      },
+      "bio": {
+        "label": "Bio",
+        "placeholder": "Enter user bio"
       },
       "twoFactor": {
         "label": "Two Factor Authentication",
@@ -710,6 +735,9 @@
       "id": "ID",
       "name": "Name",
       "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "bio": "Bio",
       "role": "Role",
       "adminCode": "Admin Code",
       "twoFactor": "Two-Factor Authentication"
@@ -724,7 +752,8 @@
     }
   },
   "navbar": {
-    "brand": "AppName",
+    "brand": "FormForge",
+    "back": "Go back",
     "navigation": {
       "dashboard": "Dashboard",
       "profile": "Profile",
@@ -736,22 +765,24 @@
     },
     "theme": {
       "toggleTheme": "Toggle theme",
-      "darkMode": "Dark Mode",
-      "lightMode": "Light Mode"
+      "darkMode": "Dark mode",
+      "lightMode": "Light mode"
     },
     "language": {
-      "title": "Language"
+      "switchLanguage": "Switch language",
+      "en": "English",
+      "es": "Spanish"
     },
     "userMenu": {
       "profile": "Profile",
       "settings": "Settings",
-      "logout": "Log out"
+      "logout": "Logout"
     },
     "mobileMenu": {
       "openMenu": "Open menu"
     },
     "screenReader": {
-      "navigation": "Navigation Menu"
+      "navigation": "Navigation"
     }
   },
   "auth": {

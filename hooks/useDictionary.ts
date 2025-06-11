@@ -8,9 +8,10 @@ import enDict from '@/dictionaries/en.json';
 import esDict from '@/dictionaries/es.json';
 
 const dictionaries: { [key in Locale]: Dictionary } = {
-  en: enDict,
-  es: esDict,
+  en: enDict as Dictionary,
+  es: esDict as Dictionary,
 };
+
 
 /**
  * Hook to access dictionary translations on the client side

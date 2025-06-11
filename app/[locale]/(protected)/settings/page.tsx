@@ -35,6 +35,9 @@ const Page = () => {
     defaultValues: {
       name: user?.name || undefined,
       email: user?.email || undefined,
+      phone: user?.phone || undefined,
+      location: user?.location || undefined,
+      bio: user?.bio || undefined,
       password: undefined,
       Newpassword: undefined,
       isTwoFactorEnabled: user?.isTwoFactorEnabled || undefined,
@@ -93,6 +96,58 @@ const Page = () => {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dict.settings.form.phone.label}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={dict.settings.form.phone.placeholder}
+                          disabled={isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dict.settings.form.location.label}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={dict.settings.form.location.placeholder}
+                          disabled={isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dict.settings.form.bio.label}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={dict.settings.form.bio.placeholder}
+                          disabled={isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
 
                 {user?.isOAuth === false && (
                   <>

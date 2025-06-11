@@ -99,10 +99,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.isTwoFactorEnabled = token.isTwoFactorEnabled as boolean;
       }
+      if (token.phone && session.user) {
+        session.user.phone = token.phone as string;
+      }
+      if (token.location && session.user) {
+        session.user.location = token.location as string;
+      }
+      if (token.bio && session.user) {
+        session.user.bio = token.bio as string;
+      }
       if (session.user) {
         session.user.name = token.name;
         session.user.email = token.email as string;
         session.user.isOAuth = token.isOAuth as boolean;
+        session.user.phone = token.phone as string;
+        session.user.location = token.location as string;
+        session.user.bio = token.bio as string;
       
       }
       return session;
@@ -140,6 +152,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       token.name = existingUser.name;
       token.email = existingUser.email;
       token.role = existingUser.role;
+      token.phone = existingUser.phone;
+      token.location = existingUser.location;
+      token.bio = existingUser.bio;
       token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
       return token;
     },

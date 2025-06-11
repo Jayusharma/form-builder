@@ -20,6 +20,9 @@ export interface Dictionary {
       id: string;
       name: string;
       email: string;
+      phone: string;
+      location: string;
+      bio: string;
       role: string;
       adminCode: string;
       twoFactor: string;
@@ -116,8 +119,10 @@ export interface Dictionary {
       lightMode: string;
     };
     language: {
-      title: string;
-    };
+      "switchLanguage": "Switch language",
+      "en": "English",
+      "es": "Spanish"
+    },
     userMenu: {
       profile: string;
       settings: string;
@@ -178,6 +183,18 @@ export interface Dictionary {
           placeholder: string;
         };
       };
+      phone: {
+        label: string;
+        placeholder: string;
+      };
+      location: {
+        label: string;
+        placeholder: string;
+      };
+      bio: {
+        label: string;
+        placeholder: string;
+      };
       twoFactor: {
         label: string;
         description: string;
@@ -215,6 +232,18 @@ export interface Dictionary {
           admin: string;
           sadmin: string;
         };
+      };
+      phone: {
+        label: string;
+        placeholder: string;
+      };
+      location: {
+        label: string;
+        placeholder: string;
+      };
+      bio: {
+        label: string;
+        placeholder: string;
       };
       twoFactor: {
         label: string;

@@ -448,75 +448,87 @@ export function FormPreview({
       setIsSubmitting(false);
     }
   };
+/**
+ * Handles form printing
+ * Generates a print-friendly version of the form with responses
+ */
+const handlePrint = () => {
+  setIsPrinting(true);
+       
+  // Add print-only class to body when printing
+  document.body.classList.add('printing');
+       
+  try {
+    window.print();
+  } finally {
+    // Remove print-only class after printing
+    document.body.classList.remove('printing');
+    setIsPrinting(false);
+  }
+};
 
-  /**
-   * Handles form printing
-   * Generates a print-friendly version of the form with responses
-   */
-  const handlePrint = () => {
-    setIsPrinting(true);
-    
-    // Add print-only class to body when printing
-    document.body.classList.add('printing');
-    
-    try {
-      window.print();
-    } finally {
-      // Remove print-only class after printing
-      document.body.classList.remove('printing');
-      setIsPrinting(false);
-    }
-  };
-  
-  // Add useEffect to inject print styles
-  useEffect(() => {
-    // Create style element for print media
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @media print {
-        /* Hide everything except the form */
-        body * {
-          visibility: hidden;
-        }
-        
-        /* Show only form content */
-        #form-to-print,
-        #form-to-print * {
-          visibility: visible;
-        }
-        
-        /* Position form at the top of the page */
-        #form-to-print {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          padding: 0;
-          margin: 0;
-        }
-        
-        /* Hide print button when printing */
-        .print-button {
-          display: none !important;
-        }
-        
-        /* Remove background colors and shadows for better printing */
-        * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
+// Add useEffect to inject print styles
+useEffect(() => {
+  // Create style element for print media
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @media print {
+      /* Remove all page margins */
+      @page {
+        margin: 20mm;
+        size: auto;
       }
-    `;
-    
-    // Add style to document head
-    document.head.appendChild(style);
-    
-    // Cleanup function
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+      
+      /* Hide everything except the form */
+      body * {
+        visibility: hidden;
+      }
+             
+      /* Show only form content */
+      #form-to-print,
+      #form-to-print * {
+        visibility: visible;
+      }
+             
+      /* Position form container */
+      #form-to-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
+     
+      /* Hide print button when printing */
+      .print-button {
+        display: none !important;
+      }
+             
+      /* Remove background colors and shadows for better printing */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* Ensure clean page breaks */
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    }
+  `;
+       
+  // Add style to document head
+  document.head.appendChild(style);
+       
+  // Cleanup function
+  return () => {
+    document.head.removeChild(style);
+  };
+}, []);
   // Filter fields for rendering (exclude submit button in read-only mode)
   const fieldsToRender = isReadOnly ? form.fields.filter(field => field.type !== 'SUBMIT') : form.fields;
 
@@ -596,7 +608,7 @@ export function FormPreview({
                   minHeight: '40px'
                 }}
               >
-                {getSimpleValue(fieldValue) || 'N/A'}
+                {getSimpleValue(fieldValue) || ''}
               </div>
             ) : (
               <Input
@@ -635,7 +647,7 @@ export function FormPreview({
                   minHeight: '80px'
                 }}
               >
-                {getSimpleValue(fieldValue) || 'N/A'}
+                {getSimpleValue(fieldValue) || ''}
               </div>
             ) : (
               <Textarea
@@ -671,7 +683,7 @@ export function FormPreview({
                 color: style.textColor,
                 backgroundColor: `${style.backgroundColor}80`,
               }}>
-                {String(fieldValue || 'N/A')}
+                {String(fieldValue || '')}
               </div>
             ) : (
               <RadioGroup
@@ -721,7 +733,7 @@ export function FormPreview({
                 overflowY: 'auto',
                 minHeight: '40px'
               }}>
-                {Array.isArray(fieldValue) ? fieldValue.join(', ') : 'N/A'}
+                {Array.isArray(fieldValue) ? fieldValue.join(', ') : ''}
               </div>
             ) : (
               <div className="flex flex-wrap gap-4">
@@ -767,7 +779,7 @@ export function FormPreview({
                 color: style.textColor,
                 backgroundColor: `${style.backgroundColor}80`,
               }}>
-                {String(fieldValue || 'N/A')}
+                {String(fieldValue || '')}
               </div>
             ) : (
               <Select
@@ -1008,7 +1020,7 @@ export function FormPreview({
                           minHeight: '32px'
                         }}
                       >
-                        {item.text || 'N/A'}
+                        {item.text || ''}
                       </div>
                     </div>
                   </div>
@@ -1074,10 +1086,11 @@ export function FormPreview({
         return null;
     }
   };
-
   return (
     <div className="w-full flex justify-center">
-      <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full">
+      <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full" >
+        {/* Print-only header */}
+
         {isReadOnly && (
           <div className="flex justify-end mb-2 print-button">
             <Button
@@ -1098,7 +1111,7 @@ export function FormPreview({
           style={{ backgroundColor: style.backgroundColor }}
         >
           {form.header && (
-            <div className="border-b border-border p-4 flex items-center gap-4">
+            <div className="  border-b border-border p-4 flex items-center gap-4">
               {form.header.logo && (
                 <div className="flex-shrink-0">
                   <Image
@@ -1128,6 +1141,7 @@ export function FormPreview({
               }
             }}
             className={`
+              form-content
               w-full flex flex-col items-center
               ${getSpacingClass()} 
               p-4
@@ -1138,6 +1152,7 @@ export function FormPreview({
             style={{
               color: style.textColor || '#000000',
               fontFamily: style.fontFamily || 'Inter',
+              backgroundColor: style.backgroundColor || '#ffffff',
             }}
           >
             {isSubmitted ? (
@@ -1265,9 +1280,8 @@ export function FormPreview({
                     )}
                   </div>
                 </div>
-
                 {form.footer && (
-                  <div className="border-t border-border p-4 flex items-center gap-4">
+                  <div className="border-t border-border p-4  flex items-center gap-4">
                     {form.footer.logo && (
                       <div className="flex-shrink-0">
                         <Image

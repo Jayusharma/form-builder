@@ -45,11 +45,17 @@ export async function GET() {
         userId: user.adminCode.adminId,
         isPublished: true
       },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        createdAt: true
+      include: {
+        fields: {
+          orderBy: {
+            order: 'asc'
+          }
+        },
+        _count: {
+          select: {
+            submissions: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'

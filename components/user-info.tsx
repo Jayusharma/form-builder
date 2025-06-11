@@ -12,6 +12,9 @@ import { useDictionary } from "@/hooks/useDictionary";
 
 interface ExtendedUser extends User {
   role: UserRole;
+  phone?: string | undefined;
+  location?: string | undefined;
+  bio?: string | undefined;
   isTwoFactorEnabled: boolean;
   isOAuth?: boolean;
   adminCode?: string | null;
@@ -42,7 +45,7 @@ export default function UserInfo({ user, label }: UserInfoProps) {
   };
 
   return (
-    <Card className="w-[600px] shadow-sm py-10 space-y-5">
+    <Card className="w-[600px] shadow-sm py-10 space-y-5 ">
       <CardHeader>
         <p className="text-2xl font-semibold text-center">{label}</p>
       </CardHeader>
@@ -63,6 +66,24 @@ export default function UserInfo({ user, label }: UserInfoProps) {
           <p className="text-sm font-medium">{dict.userInfo.fields.email}</p>
           <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
             {user.email || dict.userInfo.values.notSet}
+          </p>
+        </div>
+        <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+          <p className="text-sm font-medium">{dict.userInfo.fields.phone}</p>
+          <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
+            {user.phone || dict.userInfo.values.notSet}
+          </p>
+        </div>
+        <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+          <p className="text-sm font-medium">{dict.userInfo.fields.location}</p>
+          <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
+            {user.location || dict.userInfo.values.notSet}
+          </p>
+        </div>
+        <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+          <p className="text-sm font-medium">{dict.userInfo.fields.bio}</p>
+          <p className="truncate text-xs max-w-[180px] font-mono p-1 rounded-md">
+            {user.bio || dict.userInfo.values.notSet}
           </p>
         </div>
         <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">

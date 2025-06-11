@@ -440,6 +440,18 @@
           "placeholder": "Ingresa tu nueva contraseña"
         }
       },
+      "phone": {
+        "label": "Teléfono",
+        "placeholder": "Ingresa tu número de teléfono"
+      },
+      "location": {
+        "label": "Ubicación",
+        "placeholder": "Ingresa tu ubicación"
+      },
+      "bio": {
+        "label": "Biografía",
+        "placeholder": "Ingresa tu biografía"
+      },
       "twoFactor": {
         "label": "Autenticación de Dos Factores",
         "description": "Habilita la autenticación de dos factores para tu cuenta"
@@ -493,6 +505,18 @@
           "admin": "Administrador",
           "sadmin": "Super Administrador"
         }
+      },
+      "phone": {
+        "label": "Teléfono",
+        "placeholder": "Ingresa el teléfono del usuario"
+      },
+      "location": {
+        "label": "Ubicación",
+        "placeholder": "Ingresa la ubicación del usuario"
+      },
+      "bio": {
+        "label": "Biografía",
+        "placeholder": "Ingresa la biografía del usuario"
       },
       "twoFactor": {
         "label": "Autenticación de Dos Factores",
@@ -704,6 +728,9 @@
       "id": "ID",
       "name": "Nombre",
       "email": "Correo",
+      "phone": "Teléfono",
+      "location": "Ubicación",
+      "bio": "Biografía",
       "role": "Rol",
       "adminCode": "Código de Administrador",
       "twoFactor": "Autenticación de Dos Factores"
@@ -734,7 +761,9 @@
       "lightMode": "Modo Claro"
     },
     "language": {
-      "title": "Idioma"
+      "switchLanguage": "Switch language",
+      "en": "English",
+      "es": "Spanish"
     },
     "userMenu": {
       "profile": "Perfil",

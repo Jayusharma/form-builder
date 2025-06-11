@@ -67,6 +67,9 @@ interface UserData {
   id: string;
   name: string | null;
   email: string | null;
+  phone: string | null;
+  location: string | null;
+  bio: string | null;
   role: "ADMIN" | "USER" | "MANAGER" | "SADMIN";
   isTwoFactorEnabled: boolean;
   createdAt: string;
@@ -306,7 +309,33 @@ export default function UserEditPage({ params }: UserEditPageProps) {
                 </SelectContent>
               </Select>
             </div>
-
+            <div className="space-y-1">
+              <label className="text-sm font-medium">{dict.userEdit.form.phone.label}</label>
+              <Input
+                value={userData.phone || "Not set"}
+                disabled
+                type="phone"
+                className="w-full bg-muted/50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">{dict.userEdit.form.location.label}</label>
+              <Input
+                value={userData.location || "Not set"}
+                disabled
+                type="text"
+                className="w-full bg-muted/50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">{dict.userEdit.form.bio.label}</label>
+              <Input
+                value={userData.bio || "Not set"}
+                disabled
+                type="text"
+                className="w-full bg-muted/50"
+              />
+            </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Created At</label>
               <Input

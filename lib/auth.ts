@@ -16,6 +16,9 @@ export async function CurrentUser() {
       name: true,
       email: true,
       role: true,
+      phone: true,
+      location: true,
+      bio: true,
       isTwoFactorEnabled: true,
       adminCodes: {
         select: {
@@ -35,5 +38,8 @@ export async function CurrentUser() {
     ...user,
     adminCode: user.adminCodes?.[0]?.code || null,
     isOAuth: session.user.isOAuth,
+    phone: session.user.phone,
+    location: session.user.location,
+    bio: session.user.bio,
   };
 }

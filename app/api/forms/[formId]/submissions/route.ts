@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 /**
  * Route Parameters Type
@@ -148,7 +149,19 @@ export async function GET(req: Request, { params }: RouteParams) {
         user: {
           select: {
             id: true,
-            role: true
+            role: true,
+            adminCodes: {
+              include: {
+                users: {
+                  where: {
+                    id: session.user.id
+                  },
+                  select: {
+                    id: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -159,19 +172,34 @@ export async function GET(req: Request, { params }: RouteParams) {
     }
 
     // Check user's permission to view submissions
+    const isConnectedToAdmin = form.user.adminCodes?.some(adminCode => 
+      adminCode.users.some(user => user.id === session.user.id)
+    );
+
     const canViewSubmissions = 
       session.user.role === "SADMIN" || // SADMIN can view all submissions
       form.userId === session.user.id || // Form owner can view their form's submissions
       (session.user.role === "ADMIN" && form.user.role === "USER") || // ADMIN can view USER submissions
-      (session.user.role === "MANAGER" && form.user.role === "USER"); // MANAGER can view USER submissions
+      (session.user.role === "MANAGER" && form.user.role === "USER") || // MANAGER can view USER submissions
+      (session.user.role === "USER" && isConnectedToAdmin); // USER can view submissions if connected to admin
 
     if (!canViewSubmissions) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
+    // Build where clause based on user role
+    const whereClause: Prisma.FormSubmissionWhereInput = {
+      formId: formId
+    };
+
+    // If user role is USER, only show their own submissions
+    if (session.user.role === "USER") {
+      whereClause.userId = session.user.id;
+    }
+
     // Fetch submissions with submitter details
     const submissions = await db.formSubmission.findMany({
-      where: { formId },
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -192,4 +220,4 @@ export async function GET(req: Request, { params }: RouteParams) {
     console.error("SUBMISSIONS_GET_ERROR", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

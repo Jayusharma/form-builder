@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   User, 
   LogOut, 
@@ -13,6 +13,7 @@ import {
   Moon,
   FileClock,
   Sun,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -96,6 +97,7 @@ export default function Navbar({ role }: NavbarProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const dict = useDictionary();
@@ -150,38 +152,53 @@ export default function Navbar({ role }: NavbarProps) {
     <nav className="bg-background border-b border-border fixed w-full z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex">
-            {/* Logo */}
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center">
-                <span className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-primary-foreground" />
-                </span>
-                <span className="ml-2 text-xl font-bold text-foreground">{dict.navbar.brand}</span>
-              </Link>
-            </div>
-            
-            {/* Desktop navigation */}
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {navItems?.map((item: NavigationItem) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                const isHiddenOnMd = (item.key === 'profile' || item.key === 'settings') ? 'hidden lg:inline-flex' : 'inline-flex';
-                return (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={`${isHiddenOnMd} items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      isActive
-                        ? 'border-primary text-foreground'
-                        : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-                    }`}
-                  >
-                    <Icon className="mr-2 h-4 w-4" />
-                    {dict.navbar.navigation[item.key]}
-                  </Link>
-                );
-              })}
+          {/* Left side section */}
+          <div className="flex items-center">
+            {/* Back Button - Leftmost position */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="h-9 w-9 -ml-2 mr-2"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+
+            {/* Logo and Navigation */}
+            <div className="flex">
+              {/* Logo */}
+              <div className="flex-shrink-0 flex items-center">
+                <Link href="/" className="flex items-center">
+                  <span className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-primary-foreground" />
+                  </span>
+                  <span className="ml-2 text-xl font-bold text-foreground">{dict.navbar.brand}</span>
+                </Link>
+              </div>
+              
+              {/* Desktop navigation */}
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                {navItems?.map((item: NavigationItem) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  const isHiddenOnMd = (item.key === 'profile' || item.key === 'settings') ? 'hidden lg:inline-flex' : 'inline-flex';
+                  return (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className={`${isHiddenOnMd} items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                        isActive
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="mr-2 h-4 w-4" />
+                      {dict.navbar.navigation[item.key]}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
           

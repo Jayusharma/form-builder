@@ -18,10 +18,18 @@ export type ExtendedUser = DefaultSession["user"] & {
   isTwoFactorEnabled: boolean;
   isOAuth: boolean;
   adminCode?: string;
+   phone?: string;
+   location?: string;
+   bio?: string;
 };
 
+
 declare module "next-auth" {
-  interface User extends ExtendedUser {}
+  // interface User extends ExtendedUser {
+  //   // phone?: string;
+  //   // location?: string;
+  //   // bio?: string;
+  // }
   
   interface Session {
     user: ExtendedUser;
