@@ -448,87 +448,229 @@ export function FormPreview({
       setIsSubmitting(false);
     }
   };
-/**
- * Handles form printing
- * Generates a print-friendly version of the form with responses
- */
-const handlePrint = () => {
-  setIsPrinting(true);
-       
-  // Add print-only class to body when printing
-  document.body.classList.add('printing');
-       
-  try {
-    window.print();
-  } finally {
-    // Remove print-only class after printing
-    document.body.classList.remove('printing');
-    setIsPrinting(false);
-  }
-};
 
-// Add useEffect to inject print styles
-useEffect(() => {
-  // Create style element for print media
-  const style = document.createElement('style');
-  style.innerHTML = `
-    @media print {
-      /* Remove all page margins */
-      @page {
-        margin: 20mm;
-        size: auto;
+  /**
+   * Handles form printing
+   * Generates a print-friendly version of the form with responses
+   */
+  const handlePrint = () => {
+    setIsPrinting(true);
+    
+    // Add print-only class to body when printing
+    document.body.classList.add('printing');
+    
+    // Show ONLY the fixed headers/footers for printing
+    const fixedHeaders = document.querySelectorAll('.print-header-fixed, .print-footer-fixed, .print-file-info');
+    fixedHeaders.forEach(element => {
+      (element as HTMLElement).style.display = 'block';
+    });
+    
+    // Ensure CSS running headers are hidden during print
+    const runningHeaders = document.querySelectorAll('.print-header, .print-footer');
+    runningHeaders.forEach(element => {
+      (element as HTMLElement).style.display = 'none';
+    });
+    
+    // Small delay to ensure styles are applied
+    setTimeout(() => {
+      try {
+        window.print();
+      } finally {
+        // Clean up after printing
+        setTimeout(() => {
+          // Hide fixed headers/footers after printing
+          fixedHeaders.forEach(element => {
+            (element as HTMLElement).style.display = 'none';
+          });
+          
+          // Remove print-only class after printing
+          document.body.classList.remove('printing');
+          setIsPrinting(false);
+        }, 500); // Longer delay to ensure print dialog has closed
       }
-      
-      /* Hide everything except the form */
-      body * {
-        visibility: hidden;
-      }
-             
-      /* Show only form content */
-      #form-to-print,
-      #form-to-print * {
-        visibility: visible;
-      }
-             
-      /* Position form container */
-      #form-to-print {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-     
-      /* Hide print button when printing */
-      .print-button {
-        display: none !important;
-      }
-             
-      /* Remove background colors and shadows for better printing */
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      
-      /* Ensure clean page breaks */
-      body {
-        margin: 0;
-        padding: 0;
-      }
-    }
-  `;
-       
-  // Add style to document head
-  document.head.appendChild(style);
-       
-  // Cleanup function
-  return () => {
-    document.head.removeChild(style);
+    }, 100);
   };
-}, []);
+
+  // Add useEffect to inject print styles
+  useEffect(() => {
+    // Create style element for print media
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @media print {
+        /* Page setup with proper margins */
+        @page {
+          margin: 0 !important;
+          padding: 10px !important;
+          size: auto;
+        }
+
+        /* Hide everything except the form */
+        body * {
+          visibility: hidden;
+        }
+        
+        /* Show only form content */
+        #form-to-print,
+        #form-to-print * {
+          visibility: visible;
+        }
+        
+        /* Hide original header/footer in print */
+        .form-header-original,
+        .form-footer-original {
+          display: none !important;
+        }
+
+        /* Hide the CSS running() headers/footers */
+        .print-header,
+        .print-footer {
+          display: none !important;
+        }
+        
+        /* Hide print button */
+        .print-button {
+          display: none !important;
+        }
+        
+        /* Remove background colors and shadows */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* Ensure clean page breaks */
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+        }
+
+        /* Main form container */
+        #form-to-print {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          margin: 0 !important;
+          padding: 0.5in !important;
+          padding-bottom: 100px !important;
+          min-height: 100vh !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: flex-start !important;
+          box-sizing: border-box !important;
+        }
+
+        /* Form content styling */
+        .form-content {
+          margin-top: 20px !important;
+          padding: 0 !important;
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: flex-start !important;
+          margin-bottom: 100px !important;
+        }
+
+        /* Ensure content doesn't get cut off */
+        .form-content > *:last-child {
+          margin-bottom: 300px !important;
+        }
+
+        /* Header and footer positioning */
+        .print-header-fixed {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          height: 60px !important;
+          background: white !important;
+          border-bottom: 1px solid #e5e7eb !important;
+          display: flex !important;
+          align-items: center !important;
+          z-index: 1000 !important;
+          font-size: 12px !important;
+          box-sizing: border-box !important;
+          visibility: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          padding: 0 0.5in !important;
+        }
+        
+        .print-footer-fixed {
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          height: 60px !important;
+          background: white !important;
+          border-top: 1px solid #e5e7eb !important;
+          display: flex !important;
+          align-items: center !important;
+          z-index: 1000 !important;
+          font-size: 12px !important;
+          box-sizing: border-box !important;
+          padding: 0 0.5in !important;
+        }
+
+        /* File ID and date section in print */
+        .print-file-info {
+          position: fixed !important;
+          bottom: 60px !important;
+          left: 0 !important;
+          right: 0 !important;
+          background: white !important;
+          border-top: 1px solid #e5e7eb !important;
+          padding: 4px 0 !important;
+          z-index: 999 !important;
+          text-align: center !important;
+          font-size: 10px !important;
+          color: #666 !important;
+          padding: 0 0.5in !important;
+        }
+
+        /* Header and footer content styling */
+        .print-header-fixed > div,
+        .print-footer-fixed > div {
+          width: 100% !important;
+          max-width: 800px !important;
+          margin: 0 auto !important;
+          padding: 0 20px !important;
+        }
+
+        .print-header-fixed img,
+        .print-footer-fixed img {
+          display: block !important;
+          max-height: 32px !important;
+          width: auto !important;
+        }
+
+        .print-header-fixed div[class*="flex-1"],
+        .print-footer-fixed div[class*="flex-1"] {
+          margin: 0 !important;
+          padding: 0 !important;
+          line-height: 1.2 !important;
+        }
+
+        .print-header-fixed div[class*="flex-1"] p,
+        .print-footer-fixed div[class*="flex-1"] p {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      }
+    `;
+    
+    // Add style to document head
+    document.head.appendChild(style);
+    
+    // Cleanup function
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
   // Filter fields for rendering (exclude submit button in read-only mode)
   const fieldsToRender = isReadOnly ? form.fields.filter(field => field.type !== 'SUBMIT') : form.fields;
 
@@ -1086,10 +1228,105 @@ useEffect(() => {
         return null;
     }
   };
+
   return (
     <div className="w-full flex justify-center">
-      <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full" >
-        {/* Print-only header */}
+      <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full flex flex-col min-h-screen">
+        
+        {/* Print-only header - will appear on every page */}
+        {form.header && (
+          <div className="print-header">
+            {form.header.logo && (
+              <div className="flex-shrink-0">
+                <Image
+                  src={form.header.logo}
+                  alt="Header Logo"
+                  width={32}
+                  height={32}
+                  className="h-8 w-auto object-contain"
+                />
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Print-only footer - will appear on every page */}
+        {form.footer && (
+          <div className="print-footer">
+            {form.footer.logo && (
+              <div className="flex-shrink-0">
+                <Image
+                  src={form.footer.logo}
+                  alt="Footer Logo"
+                  width={32}
+                  height={32}
+                  className="h-8 w-auto object-contain"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* File ID and date for print - will appear on every page */}
+        <div className="print-file-info" style={{ display: 'none' }}>
+          <div>
+            {form.id}
+            {isReadOnly && submissionDate && (
+              <> • {new Date(submissionDate).toLocaleString()}</>
+            )}
+          </div>
+        </div>
+
+        {/* Alternative fixed headers/footers for better browser support */}
+        <div className="print-header-fixed" style={{ display: 'none' }}>
+          {form.header && (
+            <div className="flex items-center w-full px-6">
+              {form.header.logo && (
+                <div className="flex-shrink-0 mr-4">
+                  <Image
+                    src={form.header.logo}
+                    alt="Header Logo"
+                    width={32}
+                    height={32}
+                    className="h-8 w-auto object-contain"
+                  />
+                </div>
+              )}
+              {form.header.text && (
+                <div 
+                  className="flex-1 text-left"
+                  dangerouslySetInnerHTML={{ __html: form.header.text }}
+                  style={{ color: style.textColor }}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="print-footer-fixed" style={{ display: 'none' }}>
+          {form.footer && (
+            <div className="flex items-center w-full px-6">
+              {form.footer.logo && (
+                <div className="flex-shrink-0 mr-4">
+                  <Image
+                    src={form.footer.logo}
+                    alt="Footer Logo"
+                    width={32}
+                    height={32}
+                    className="h-8 w-auto object-contain"
+                  />
+                </div>
+              )}
+              {form.footer.text && (
+                <div 
+                  className="flex-1 text-left"
+                  dangerouslySetInnerHTML={{ __html: form.footer.text }}
+                  style={{ color: style.textColor }}
+                />
+              )}
+            </div>
+          )}
+        </div>
 
         {isReadOnly && (
           <div className="flex justify-end mb-2 print-button">
@@ -1107,11 +1344,12 @@ useEffect(() => {
         )}
 
         <div 
-          className="border border-border rounded-lg"
+          className="border border-border rounded-lg flex flex-col flex-grow"
           style={{ backgroundColor: style.backgroundColor }}
         >
+          {/* Original header - hidden in print */}
           {form.header && (
-            <div className="  border-b border-border p-4 flex items-center gap-4">
+            <div className="form-header-original border-b border-border p-4 flex items-center gap-4">
               {form.header.logo && (
                 <div className="flex-shrink-0">
                   <Image
@@ -1133,178 +1371,183 @@ useEffect(() => {
             </div>
           )}
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!isReadOnly && !isSubmitted) {
-                handleSubmit();
-              }
-            }}
-            className={`
-              form-content
-              w-full flex flex-col items-center
-              ${getSpacingClass()} 
-              p-4
-              ${getBorderRadiusClass()} 
-              ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
-              text-sm
-            `}
-            style={{
-              color: style.textColor || '#000000',
-              fontFamily: style.fontFamily || 'Inter',
-              backgroundColor: style.backgroundColor || '#ffffff',
-            }}
-          >
-            {isSubmitted ? (
-              <div className="text-center space-y-4" style={{ color: style.textColor }}>
-                <div className="text-xl font-semibold" style={{ color: style.textColor }}>
-                  {dict.formPreview.submission.success}
-                </div>
-                <p className="text-sm opacity-80" style={{ color: style.textColor }}>
-                  {dict.formPreview.submission.thankYou}
-                </p>
-                {!isReadOnly && (
-                  <div className="flex justify-center gap-4 mt-4">
-                    <Button
-                      variant="default"
-                      onClick={() => router.push('/dashboard?tab=forms')}
-                      className="rounded-none"
-                      style={{
-                        backgroundColor: style.primaryColor,
-                        color: '#ffffff',
-                      }}
-                    >
-                      {dict.formPreview.buttons.close}
-                    </Button>
+          <div className="flex-grow">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!isReadOnly && !isSubmitted) {
+                  handleSubmit();
+                }
+              }}
+              className={`
+                form-content form-content-print
+                w-full flex flex-col items-center
+                ${getSpacingClass()} 
+                p-4
+                ${getBorderRadiusClass()} 
+                ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
+                text-sm
+              `}
+              style={{
+                color: style.textColor || '#000000',
+                fontFamily: style.fontFamily || 'Inter',
+                backgroundColor: style.backgroundColor || '#ffffff',
+              }}
+            >
+              {isSubmitted ? (
+                <div className="text-center space-y-4" style={{ color: style.textColor }}>
+                  <div className="text-xl font-semibold" style={{ color: style.textColor }}>
+                    {dict.formPreview.submission.success}
                   </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2 w-full text-center">
-                  <h2 
-                    className="text-2xl font-bold" 
-                    style={{ 
-                      color: style.textColor,
-                      fontFamily: style.fontFamily 
-                    }}
-                  >
-                    {form.title}
-                  </h2>
-                  {form.description && (
-                    <p 
-                      className="text-sm opacity-80" 
+                  <p className="text-sm opacity-80" style={{ color: style.textColor }}>
+                    {dict.formPreview.submission.thankYou}
+                  </p>
+                  {!isReadOnly && (
+                    <div className="flex justify-center gap-4 mt-4">
+                      <Button
+                        variant="default"
+                        onClick={() => router.push('/dashboard?tab=forms')}
+                        className="rounded-none"
+                        style={{
+                          backgroundColor: style.primaryColor,
+                          color: '#ffffff',
+                        }}
+                      >
+                        {dict.formPreview.buttons.close}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2 w-full text-center">
+                    <h2 
+                      className="text-2xl font-bold" 
                       style={{ 
                         color: style.textColor,
                         fontFamily: style.fontFamily 
                       }}
                     >
-                      {form.description}
-                    </p>
+                      {form.title}
+                    </h2>
+                    {form.description && (
+                      <p 
+                        className="text-sm opacity-80" 
+                        style={{ 
+                          color: style.textColor,
+                          fontFamily: style.fontFamily 
+                        }}
+                      >
+                        {form.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className={`
+                    w-full
+                    ${getSpacingClass()} 
+                    p-4
+                    ${getBorderRadiusClass()} 
+                    ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
+                    text-sm
+                  `}>
+                    <div className="grid grid-cols-12 grid-auto-rows-min">
+                      {((): React.ReactNode => {
+                        const sections: Array<{
+                          fields: typeof fieldsToRender;
+                          separator?: typeof fieldsToRender[0];
+                        }> = [];
+                        let currentSection: typeof fieldsToRender = [];
+
+                        fieldsToRender.forEach((field) => {
+                          if (field.type === 'SEPARATOR') {
+                            if (currentSection.length > 0) {
+                              sections.push({ fields: currentSection, separator: field });
+                              currentSection = [];
+                            }
+                          } else {
+                            currentSection.push(field);
+                          }
+                        });
+
+                        if (currentSection.length > 0) {
+                          sections.push({ fields: currentSection });
+                        }
+
+                        return sections.map((section, sectionIndex) => (
+                          <div 
+                            key={sectionIndex}
+                            className="col-span-12 form-section"
+                          >
+                            <div className="grid grid-cols-12 grid-auto-rows-min">
+                              {section.fields.map((field) => {
+                                const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
+                                
+                                return (
+                                  <div 
+                                    key={field.id} 
+                                    className={`form-field transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0' : 'border-0'} ${gridPos.y > 0 ? 'mt-2' : ''}`}
+                                    style={{
+                                      gridColumnStart: gridPos.x + 1,
+                                      gridColumnEnd: `span ${gridPos.width}`,
+                                      gridRow: gridPos.y + 1,
+                                      color: style.textColor,
+                                    }}
+                                  >
+                                    {renderField(field)}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {section.separator && (
+                              <div className="w-full">
+                                {renderField(section.separator)}
+                              </div>
+                            )}
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </>
+              )}
+            </form>
+          </div>
+
+          {/* Original footer - hidden in print */}
+          {form.footer && (
+            <>
+              {/* File ID and date just above the footer */}
+              <div className="w-full flex justify-center mt-2 mb-0 print:hidden">
+                <div className="text-[10px] opacity-40 text-center" style={{ color: style.textColor }}>
+                  {form.id}
+                  {isReadOnly && submissionDate && (
+                    <> • {new Date(submissionDate).toLocaleString()}</>
                   )}
                 </div>
-
-                <div className={`
-                  w-full
-                  ${getSpacingClass()} 
-                  p-4
-                  ${getBorderRadiusClass()} 
-                  ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
-                  text-sm
-                `}>
-                  <div className="grid grid-cols-12 grid-auto-rows-min">
-                    {((): React.ReactNode => {
-                      const sections: Array<{
-                        fields: typeof fieldsToRender;
-                        separator?: typeof fieldsToRender[0];
-                      }> = [];
-                      let currentSection: typeof fieldsToRender = [];
-
-                      fieldsToRender.forEach((field) => {
-                        if (field.type === 'SEPARATOR') {
-                          if (currentSection.length > 0) {
-                            sections.push({ fields: currentSection, separator: field });
-                            currentSection = [];
-                          }
-                        } else {
-                          currentSection.push(field);
-                        }
-                      });
-
-                      if (currentSection.length > 0) {
-                        sections.push({ fields: currentSection });
-                      }
-
-                      return sections.map((section, sectionIndex) => (
-                        <div 
-                          key={sectionIndex}
-                          className="col-span-12"
-                        >
-                          <div className="grid grid-cols-12 grid-auto-rows-min">
-                            {section.fields.map((field) => {
-                              const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
-                              
-                              return (
-                                <div 
-                                  key={field.id} 
-                                  className={`form-field transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0' : 'border-0'} ${gridPos.y > 0 ? 'mt-2' : ''}`}
-                                  style={{
-                                    gridColumnStart: gridPos.x + 1,
-                                    gridColumnEnd: `span ${gridPos.width}`,
-                                    gridRow: gridPos.y + 1,
-                                    color: style.textColor,
-                                  }}
-                                >
-                                  {renderField(field)}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          {section.separator && (
-                            <div className="w-full">
-                              {renderField(section.separator)}
-                            </div>
-                          )}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-
-                {/* Form ID and submission date footer */}
-                <div className="flex justify-center">
-                  <div className="text-[10px] opacity-40 text-center" style={{ color: style.textColor }}>
-                    {form.id}
-                    {isReadOnly && submissionDate && (
-                      <> • {new Date(submissionDate).toLocaleString()}</>
-                    )}
-                  </div>
-                </div>
-                {form.footer && (
-                  <div className="border-t border-border p-4  flex items-center gap-4">
-                    {form.footer.logo && (
-                      <div className="flex-shrink-0">
-                        <Image
-                          src={form.footer.logo}
-                          alt="Footer Logo"
-                          width={48}
-                          height={48}
-                          className="h-12 w-auto object-contain"
-                        />
-                      </div>
-                    )}
-                    {form.footer.text && (
-                      <div 
-                        className="prose prose-sm max-w-none flex-1"
-                        dangerouslySetInnerHTML={{ __html: form.footer.text }}
-                        style={{ color: style.textColor }}
-                      />
-                    )}
+              </div>
+              <div className="form-footer-original p-4 flex items-center gap-4 border-t border-border bg-white mt-auto">
+                {form.footer.logo && (
+                  <div className="flex-shrink-0">
+                    <Image
+                      src={form.footer.logo}
+                      alt="Footer Logo"
+                      width={48}
+                      height={48}
+                      className="h-12 w-auto object-contain"
+                    />
                   </div>
                 )}
-              </>
-            )}
-          </form>
+                {form.footer.text && (
+                  <div 
+                    className="prose prose-sm max-w-none flex-1"
+                    dangerouslySetInnerHTML={{ __html: form.footer.text }}
+                    style={{ color: style.textColor }}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
