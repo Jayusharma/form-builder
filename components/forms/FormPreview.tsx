@@ -460,7 +460,7 @@ export function FormPreview({
     document.body.classList.add('printing');
     
     // Show ONLY the fixed headers/footers for printing
-    const fixedHeaders = document.querySelectorAll('.print-header-fixed, .print-footer-fixed, .print-file-info');
+    const fixedHeaders = document.querySelectorAll('.print-header-fixed, .print-footer-fixed, .print-file-info, .print-rich-text-print');
     fixedHeaders.forEach(element => {
       (element as HTMLElement).style.display = 'block';
     });
@@ -494,8 +494,8 @@ export function FormPreview({
   // Add useEffect to inject print styles
   useEffect(() => {
     // Create style element for print media
-    const style = document.createElement('style');
-    style.innerHTML = `
+    const styleEl = document.createElement('style');
+    styleEl.innerHTML = `
       @media print {
         /* Page setup with proper margins */
         @page {
@@ -542,7 +542,7 @@ export function FormPreview({
         body {
           margin: 0 !important;
           padding: 0 !important;
-          background: white !important;
+          background: ${style.backgroundColor} !important;
         }
 
         /* Main form container */
@@ -552,31 +552,39 @@ export function FormPreview({
           left: 0 !important;
           right: 0 !important;
           margin: 0 !important;
-          padding: 0.5in !important;
-          padding-bottom: 100px !important;
-          min-height: 100vh !important;
+          padding-top: 0.5in !important;
+          padding-left: 0.5in !important;
+          padding-right: 0.5in !important;
           display: flex !important;
           flex-direction: column !important;
           justify-content: flex-start !important;
           box-sizing: border-box !important;
+          padding-bottom:  0.5in !important;
         }
 
         /* Form content styling */
         .form-content {
-          margin-top: 20px !important;
-          padding: 0 !important;
+          margin-top: 10px !important;
+          margin-bottom: 0 !important;
+          padding-top: 0 !important;
+          padding-bottom: 80px !important;
           flex: 1 !important;
           display: flex !important;
           flex-direction: column !important;
           justify-content: flex-start !important;
-          margin-bottom: 100px !important;
         }
 
         /* Ensure content doesn't get cut off */
         .form-content > *:last-child {
-          margin-bottom: 300px !important;
+          margin-bottom: 0 !important;
         }
 
+        /* Add bottom margin to rich text fields on print */
+        .form-field-rich-text-print {
+          page-break-after: always !important;
+          break-after: page !important;
+        }
+        
         /* Header and footer positioning */
         .print-header-fixed {
           position: fixed !important;
@@ -584,7 +592,7 @@ export function FormPreview({
           left: 0 !important;
           right: 0 !important;
           height: 60px !important;
-          background: white !important;
+          background: ${style.backgroundColor} !important;
           border-bottom: 1px solid #e5e7eb !important;
           display: flex !important;
           align-items: center !important;
@@ -597,29 +605,34 @@ export function FormPreview({
           padding: 0 0.5in !important;
         }
         
+      
         .print-footer-fixed {
           position: fixed !important;
           bottom: 0 !important;
           left: 0 !important;
           right: 0 !important;
           height: 60px !important;
-          background: white !important;
+          background: ${style.backgroundColor} !important;
           border-top: 1px solid #e5e7eb !important;
           display: flex !important;
           align-items: center !important;
           z-index: 1000 !important;
           font-size: 12px !important;
           box-sizing: border-box !important;
+          visibility: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
           padding: 0 0.5in !important;
         }
-
+        
+        
         /* File ID and date section in print */
         .print-file-info {
           position: fixed !important;
           bottom: 60px !important;
           left: 0 !important;
           right: 0 !important;
-          background: white !important;
+          background: ${style.backgroundColor} !important;
           border-top: 1px solid #e5e7eb !important;
           padding: 4px 0 !important;
           z-index: 999 !important;
@@ -661,15 +674,15 @@ export function FormPreview({
     `;
     
     // Add style to document head
-    document.head.appendChild(style);
+    document.head.appendChild(styleEl);
     
     // Cleanup function
     return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
+      if (document.head.contains(styleEl)) {
+        document.head.removeChild(styleEl);
       }
     };
-  }, []);
+  }, [style.backgroundColor, style.textColor]);
 
   // Filter fields for rendering (exclude submit button in read-only mode)
   const fieldsToRender = isReadOnly ? form.fields.filter(field => field.type !== 'SUBMIT') : form.fields;
@@ -784,7 +797,7 @@ export function FormPreview({
                   fontFamily: style.fontFamily,
                   color: style.textColor,
                   backgroundColor: `${style.backgroundColor}80`,
-                  maxHeight: '500px',
+                  maxHeight: '400px',
                   overflowY: 'auto',
                   minHeight: '80px'
                 }}
@@ -1102,7 +1115,7 @@ export function FormPreview({
 
       case 'RICH_TEXT':
         return (
-          <div className="space-y-1">
+          <div className="space-y-1 form-field-rich-text-print">
             <div 
               className="prose prose-sm max-w-none border-0 rounded-none" 
               style={{ 
@@ -1303,7 +1316,7 @@ export function FormPreview({
           )}
         </div>
 
-        <div className="print-footer-fixed" style={{ display: 'none' }}>
+        <div className="print-footer-fixed" style={{ display: 'none'}}>
           {form.footer && (
             <div className="flex items-center w-full px-6">
               {form.footer.logo && (
@@ -1483,10 +1496,16 @@ export function FormPreview({
                               {section.fields.map((field) => {
                                 const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
                                 
+                                // Add print margin class for RICH_TEXT fields
+                                const fieldClass =
+                                  field.type !== 'RICH_TEXT'
+                                    ? 'p-0'
+                                    : 'border-0 form-field-rich-text-print';
+
                                 return (
                                   <div 
                                     key={field.id} 
-                                    className={`form-field transition-colors ${field.type !== 'RICH_TEXT' ? 'p-0' : 'border-0'} ${gridPos.y > 0 ? 'mt-2' : ''}`}
+                                    className={`form-field transition-colors ${fieldClass} ${gridPos.y > 0 ? 'mt-2' : ''}`}
                                     style={{
                                       gridColumnStart: gridPos.x + 1,
                                       gridColumnEnd: `span ${gridPos.width}`,
@@ -1526,7 +1545,7 @@ export function FormPreview({
                   )}
                 </div>
               </div>
-              <div className="form-footer-original p-4 flex items-center gap-4 border-t border-border bg-white mt-auto">
+              <div className="form-footer-original p-4 flex items-center gap-4 border-t border-border mt-auto">
                 {form.footer.logo && (
                   <div className="flex-shrink-0">
                     <Image
