@@ -16,7 +16,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -32,16 +32,10 @@ import { useDictionary } from '@/hooks/useDictionary';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { PDFExport } from '@progress/kendo-react-pdf';
 
-/**
- * Grid layout configuration constants
- * Defines the layout parameters for the form preview grid
- */
-// const GRID_CELL_SIZE = 100; // pixels
-// const GRID_COLUMNS = 12; // 12-column grid system
-// const MOBILE_BREAKPOINT = 640; // sm breakpoint
+// ... (all type definitions and utility functions remain unchanged)
 
-// Type definitions for form field values
 type TextValue = string;
 type ParagraphValue = string;
 type MultipleChoiceValue = string;
@@ -56,13 +50,11 @@ type TextWithCheckboxValue = {
   }>;
 };
 
-// Form width type
 type FormWidth = 'small' | 'medium' | 'large';
 type FormAlignment = 'left' | 'center' | 'right';
 type FormSpacing = 'comfortable' | 'compact' | 'spacious';
 type FormBorderRadius = 'sm' | 'md' | 'lg';
 
-// Combined type for all possible form response values
 export type FormResponseValue = 
   | TextValue 
   | ParagraphValue 
@@ -73,7 +65,6 @@ export type FormResponseValue =
   | RichTextValue 
   | TextWithCheckboxValue;
 
-// Form field types
 export type FormFieldType = 
   | 'TEXT'
   | 'PARAGRAPH'
@@ -86,7 +77,6 @@ export type FormFieldType =
   | 'TEXT_WITH_CHECKBOX'
   | 'SEPARATOR';
 
-// Update FormStyle type to match the schema
 type FormStyle = {
   width: FormWidth;
   alignment: FormAlignment;
@@ -101,18 +91,12 @@ type FormStyle = {
   primaryColor: string;
 };
 
-// Form response data type
 export type FormResponseData = Record<string, FormResponseValue>;
 
-/**
- * Gets the field value with proper type handling
- */
 function getFieldValue(value: FormResponseValue | undefined, fieldType: string): string | string[] | undefined {
   if (value === undefined || value === null) {
     return fieldType === 'CHECKBOX' ? [] : '';
   }
-  
-  // Handle specific field types
   switch (fieldType) {
     case 'CHECKBOX':
       return Array.isArray(value) ? value : [];
@@ -128,22 +112,6 @@ function getFieldValue(value: FormResponseValue | undefined, fieldType: string):
   }
 }
 
-/**
- * FormPreviewProps Interface
- * Defines the props for the FormPreview component
- * 
- * @interface
- * @property {Object} form - Form metadata
- * @property {string} form.id - Unique form identifier
- * @property {string} form.title - Form title
- * @property {string|null} form.description - Form description
- * @property {FormStyle} [form.style] - Form styling options
- * @property {FormField[]} fields - Array of form fields
- * @property {boolean} [isPublic=false] - Whether the form is publicly accessible
- * @property {FormResponseData} [submissionResponses] - Existing submission responses
- * @property {boolean} [isReadOnly=false] - Whether the form is in read-only mode
- * @property {Date} [submissionDate] - Submission date
- */
 interface FormPreviewProps {
   form: {
     id: string;
@@ -166,13 +134,6 @@ interface FormPreviewProps {
   onSubmit?: (data: FormResponseData) => void;
 }
 
-/**
- * Process form style utility function
- * Handles parsing and validation of form styles with proper type assertions
- * 
- * @param {unknown} rawStyle - The raw style object from the database
- * @returns {FormStyle} Processed and validated form style
- */
 function processFormStyle(rawStyle: unknown): FormStyle {
   try {
     const style = typeof rawStyle === 'string' 
@@ -214,7 +175,6 @@ function processFormStyle(rawStyle: unknown): FormStyle {
   };
 }
 
-// Add this component for TEXT_WITH_CHECKBOX field type
 function TextWithCheckboxField({ 
   field, 
   value, 
@@ -230,7 +190,6 @@ function TextWithCheckboxField({
     return borderRadius === 'none' ? '0' : undefined;
   };
 
-  // Initialize value.items if it doesn't exist or has different length than options
   const items = value.items || field.options?.map(() => ({ checked: false, text: '' })) || [];
 
   const commonInputStyle = {
@@ -309,13 +268,6 @@ function TextWithCheckboxField({
   );
 }
 
-/**
- * FormPreview Component
- * Renders a form with preview and submission capabilities
- * 
- * @param {FormPreviewProps} props - Component props
- * @returns {JSX.Element} Rendered form preview
- */
 export function FormPreview({
   form,
   submissionResponses,
@@ -323,7 +275,6 @@ export function FormPreview({
   submissionDate,
   onSubmit,
 }: FormPreviewProps) {
-  // State management
   const { toast } = useToast();
   const [responses, setResponses] = useState<FormResponseData>(submissionResponses || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -331,17 +282,11 @@ export function FormPreview({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const dict = useDictionary();
   const router = useRouter();
+  const pdfExportComponent = useRef<PDFExport>(null);
 
-  // Use submissionResponses in read-only mode
   const currentResponses = isReadOnly ? submissionResponses : responses;
-
-  // Process form style
   const style = processFormStyle(form.style);
 
-  /**
-   * Utility functions for responsive styling
-   * These functions return appropriate CSS classes based on form style settings
-   */
   const getAlignmentClass = () => {
     switch (style.alignment) {
       case 'left': return 'items-start text-left';
@@ -364,15 +309,10 @@ export function FormPreview({
     return 'rounded-none';
   };
 
-  /**
-   * Handles form submission
-   * Validates required fields and submits form data to the server
-   */
   const handleSubmit = async (event?: React.FormEvent) => {
     if (event) {
       event.preventDefault();
     }
-    
     setIsSubmitting(true);
 
     const missingRequired = form.fields.filter(
@@ -449,103 +389,68 @@ export function FormPreview({
     }
   };
 
-  /**
-   * Handles form printing
-   * Generates a print-friendly version of the form with responses
-   */
   const handlePrint = () => {
     setIsPrinting(true);
-    
-    // Add print-only class to body when printing
     document.body.classList.add('printing');
-    
-    // Show ONLY the fixed headers/footers for printing
     const fixedHeaders = document.querySelectorAll('.print-header-fixed, .print-footer-fixed, .print-file-info, .print-rich-text-print');
     fixedHeaders.forEach(element => {
       (element as HTMLElement).style.display = 'block';
     });
-    
-    // Ensure CSS running headers are hidden during print
     const runningHeaders = document.querySelectorAll('.print-header, .print-footer');
     runningHeaders.forEach(element => {
       (element as HTMLElement).style.display = 'none';
     });
-    
-    // Small delay to ensure styles are applied
     setTimeout(() => {
       try {
         window.print();
       } finally {
-        // Clean up after printing
         setTimeout(() => {
-          // Hide fixed headers/footers after printing
           fixedHeaders.forEach(element => {
             (element as HTMLElement).style.display = 'none';
           });
-          
-          // Remove print-only class after printing
           document.body.classList.remove('printing');
           setIsPrinting(false);
-        }, 500); // Longer delay to ensure print dialog has closed
+        }, 500);
       }
     }, 100);
   };
 
-  // Add useEffect to inject print styles
   useEffect(() => {
-    // Create style element for print media
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `
       @media print {
-        /* Page setup with proper margins */
         @page {
           margin: 0 !important;
           padding: 10px !important;
           size: auto;
         }
-
-        /* Hide everything except the form */
         body * {
           visibility: hidden;
         }
-        
-        /* Show only form content */
         #form-to-print,
         #form-to-print * {
           visibility: visible;
         }
-        
-        /* Hide original header/footer in print */
         .form-header-original,
         .form-footer-original {
           display: none !important;
         }
-
-        /* Hide the CSS running() headers/footers */
         .print-header,
         .print-footer {
           display: none !important;
         }
-        
-        /* Hide print button */
         .print-button {
           display: none !important;
         }
-        
-        /* Remove background colors and shadows */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
-        
-        /* Ensure clean page breaks */
         body {
           margin: 0 !important;
           padding: 0 !important;
           background: ${style.backgroundColor} !important;
         }
-
-        /* Main form container */
         #form-to-print {
           position: absolute !important;
           top: 0 !important;
@@ -561,8 +466,6 @@ export function FormPreview({
           box-sizing: border-box !important;
           padding-bottom:  0.5in !important;
         }
-
-        /* Form content styling */
         .form-content {
           margin-top: 10px !important;
           margin-bottom: 0 !important;
@@ -573,19 +476,13 @@ export function FormPreview({
           flex-direction: column !important;
           justify-content: flex-start !important;
         }
-
-        /* Ensure content doesn't get cut off */
         .form-content > *:last-child {
           margin-bottom: 0 !important;
         }
-
-        /* Add bottom margin to rich text fields on print */
         .form-field-rich-text-print {
           page-break-after: always !important;
           break-after: page !important;
         }
-        
-        /* Header and footer positioning */
         .print-header-fixed {
           position: fixed !important;
           top: 0 !important;
@@ -604,8 +501,6 @@ export function FormPreview({
           print-color-adjust: exact !important;
           padding: 0 0.5in !important;
         }
-        
-      
         .print-footer-fixed {
           position: fixed !important;
           bottom: 0 !important;
@@ -624,9 +519,6 @@ export function FormPreview({
           print-color-adjust: exact !important;
           padding: 0 0.5in !important;
         }
-        
-        
-        /* File ID and date section in print */
         .print-file-info {
           position: fixed !important;
           bottom: 60px !important;
@@ -641,8 +533,6 @@ export function FormPreview({
           color: #666 !important;
           padding: 0 0.5in !important;
         }
-
-        /* Header and footer content styling */
         .print-header-fixed > div,
         .print-footer-fixed > div {
           width: 100% !important;
@@ -650,21 +540,18 @@ export function FormPreview({
           margin: 0 auto !important;
           padding: 0 20px !important;
         }
-
         .print-header-fixed img,
         .print-footer-fixed img {
           display: block !important;
           max-height: 32px !important;
           width: auto !important;
         }
-
         .print-header-fixed div[class*="flex-1"],
         .print-footer-fixed div[class*="flex-1"] {
           margin: 0 !important;
           padding: 0 !important;
           line-height: 1.2 !important;
         }
-
         .print-header-fixed div[class*="flex-1"] p,
         .print-footer-fixed div[class*="flex-1"] p {
           margin: 0 !important;
@@ -672,11 +559,7 @@ export function FormPreview({
         }
       }
     `;
-    
-    // Add style to document head
     document.head.appendChild(styleEl);
-    
-    // Cleanup function
     return () => {
       if (document.head.contains(styleEl)) {
         document.head.removeChild(styleEl);
@@ -684,16 +567,8 @@ export function FormPreview({
     };
   }, [style.backgroundColor, style.textColor]);
 
-  // Filter fields for rendering (exclude submit button in read-only mode)
   const fieldsToRender = isReadOnly ? form.fields.filter(field => field.type !== 'SUBMIT') : form.fields;
 
-  /**
-   * Renders a form field based on its type
-   * Handles different field types and their specific rendering requirements
-   * 
-   * @param {FormField} field - Form field to render
-   * @returns {JSX.Element|null} Rendered field component
-   */
   const renderField = (field: FormField) => {
     const commonClasses = `
       w-full 
@@ -716,17 +591,15 @@ export function FormPreview({
       ${getAlignmentClass()}
     `;
 
-    // Determine the value to display/use based on read-only mode
     const fieldValue = currentResponses?.[field.id];
 
     const commonInputStyle = {
       color: style.textColor,
       fontFamily: style.fontFamily,
       borderColor: style.borderColor || '#e5e7eb',
-      backgroundColor: 'rgba(243, 244, 246, 0.5)', // Light grey with transparency
+      backgroundColor: 'rgba(243, 244, 246, 0.5)',
     };
 
-    // Helper function to get simple value
     const getSimpleValue = (value: FormResponseValue | undefined): string => {
       if (value === undefined || value === null) return '';
       if (typeof value === 'string') return value;
@@ -782,7 +655,6 @@ export function FormPreview({
             )}
           </div>
         );
-
       case 'PARAGRAPH':
         return (
           <div className={`space-y-1 ${getAlignmentClass()}`}>
@@ -824,7 +696,6 @@ export function FormPreview({
             )}
           </div>
         );
-
       case 'MULTIPLE_CHOICE':
         return (
           <div className="space-y-1">
@@ -871,7 +742,6 @@ export function FormPreview({
             )}
           </div>
         );
-
       case 'CHECKBOX':
         return (
           <div className="space-y-1">
@@ -920,7 +790,6 @@ export function FormPreview({
             )}
           </div>
         );
-
       case 'DROPDOWN':
         return (
           <div className="space-y-1">
@@ -978,7 +847,6 @@ export function FormPreview({
             )}
           </div>
         );
-
       case 'IMAGE_UPLOAD':
         return (
           <div className="space-y-1">
@@ -1038,35 +906,26 @@ export function FormPreview({
                           className="hidden"
                           id={`file-${field.id}`}
                           onChange={async (e) => {
-                            e.preventDefault(); // Prevent default behavior
-                            e.stopPropagation(); // Stop event propagation
-                            
+                            e.preventDefault();
+                            e.stopPropagation();
                             const file = e.target.files?.[0];
                             if (file) {
                               try {
-                                // Create form data
                                 const formData = new FormData();
                                 formData.append('file', file);
-
-                                // Upload file
                                 const response = await fetch('/api/upload', {
                                   method: 'POST',
                                   body: formData,
                                 });
-
                                 if (!response.ok) {
                                   const error = await response.json();
                                   throw new Error(error.error || 'Upload failed');
                                 }
-
                                 const data = await response.json();
-                                
-                                // Update form response with the image URL
                                 setResponses(prev => ({ 
                                   ...prev, 
                                   [field.id]: data.url 
                                 }));
-
                                 toast({
                                   title: "Success",
                                   description: dict.formPreview.imageUpload.success,
@@ -1112,10 +971,9 @@ export function FormPreview({
             )}
           </div>
         );
-
       case 'RICH_TEXT':
         return (
-          <div className="space-y-1 form-field-rich-text-print">
+          <div className="space-y-1">
             <div 
               className="prose prose-sm max-w-none border-0 rounded-none" 
               style={{ 
@@ -1128,15 +986,12 @@ export function FormPreview({
             />
           </div>
         );
-
       case 'TEXT_WITH_CHECKBOX':
         const textWithCheckboxDefaultValue: TextWithCheckboxValue = {
           items: field.options?.map(() => ({ checked: false, text: '' })) || []
         };
         const currentTextWithCheckboxValue = (currentResponses?.[field.id] as TextWithCheckboxValue) || textWithCheckboxDefaultValue;
-        
         if (isReadOnly) {
-          // Filter to show only checked items
           const checkedItems = currentTextWithCheckboxValue.items
             .map((item, index) => ({ ...item, option: field.options?.[index] }))
             .filter(item => item.checked);
@@ -1187,7 +1042,6 @@ export function FormPreview({
             </div>
           );
         }
-
         return (
           <TextWithCheckboxField
             field={field}
@@ -1196,10 +1050,8 @@ export function FormPreview({
             style={style}
           />
         );
-
       case 'SUBMIT':
         if (isReadOnly) return null;
-        
         return (
           <div 
             className={`form-field transition-colors ${getAlignmentClass()}`}
@@ -1223,7 +1075,6 @@ export function FormPreview({
             </Button>
           </div>
         );
-
       case 'SEPARATOR':
         return (
           <div className="w-full py-4">
@@ -1236,16 +1087,261 @@ export function FormPreview({
             />
           </div>
         );
-
       default:
         return null;
     }
   };
 
-  return (
-    <div className="w-full flex justify-center">
-      <div id="form-to-print" className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full flex flex-col min-h-screen">
+  const handleExportPDF = () => {
+    if (pdfExportComponent.current) {
+      pdfExportComponent.current.save();
+    }
+  };
+
+  const pageTemplate = (props: any) => (
+    <div
+      style={{
+        width: "100%",
+        fontFamily: style.fontFamily,
+        color: style.textColor,
+        fontSize: "12px",
+        padding: 0,
+        margin: 0,
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          minHeight: 50,
+          borderBottom: "1px solid #e5e7eb",
+          display: "flex",
+          alignItems: "center",
+          padding: "0 24px",
+          background: style.backgroundColor,
+          zIndex: 10,
+        }}
+      >
+        {form.header?.logo && (
+          <img src={form.header.logo} alt="Header Logo" style={{ height: 32, marginRight: 12 }} />
+        )}
+        <div dangerouslySetInnerHTML={{ __html: form.header?.text || "" }} />
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          minHeight: 60,
+          background: style.backgroundColor,
+          zIndex: 10,
+          fontSize: "11px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          padding: 0,
+        }}
+      >
+        <div style={{
+          borderTop: "1px solid #e5e7eb",
+          width: "100%",
+          margin: 0,
+        }} />
+        <div style={{
+          textAlign: "center",
+          width: "100%",
+          padding: "4px 0 2px 0",
+          color: "#666",
+          fontSize: "10px",
+          background: style.backgroundColor,
+        }}>
+          {form.id}
+          {isReadOnly && submissionDate && (
+            <> * {new Date(submissionDate).toLocaleString()}</>
+          )}
+        </div>
+        <div style={{
+          borderTop: "1px solid #e5e7eb",
+          width: "100%",
+          margin: 0,
+        }} />
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "0 24px",
+          minHeight: 32,
+        }}>
+          {form.footer?.logo && (
+            <img src={form.footer.logo} alt="Footer Logo" style={{ height: 32, marginRight: 12 }} />
+          )}
+          <span dangerouslySetInnerHTML={{ __html: form.footer?.text || "" }} />
+        </div>
         
+      </div>
+    </div>
+  );
+
+  // --- PDFExport fix: render only the form content, not the outer container ---
+  // The white screen at the bottom is caused by rendering the entire page container (with min-h-screen)
+  // inside PDFExport. Instead, only render the form content (formPreview) inside PDFExport.
+
+  // The formPreview is the actual form content, without the outer min-h-screen container.
+  const formPreview = (
+    <div className="flex-grow">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!isReadOnly && !isSubmitted) {
+            handleSubmit();
+          }
+        }}
+        className={`
+          form-content form-content-print
+          w-full flex flex-col items-center
+          ${getSpacingClass()} 
+          p-4
+          ${getBorderRadiusClass()} 
+          ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
+          text-sm
+        `}
+        style={{
+          color: style.textColor || '#000000',
+          fontFamily: style.fontFamily || 'Inter',
+          backgroundColor: style.backgroundColor || '#ffffff',
+        }}
+      >
+        {isSubmitted ? (
+          <div className="text-center space-y-4" style={{ color: style.textColor }}>
+            <div className="text-xl font-semibold" style={{ color: style.textColor }}>
+              {dict.formPreview.submission.success}
+            </div>
+            <p className="text-sm opacity-80" style={{ color: style.textColor }}>
+              {dict.formPreview.submission.thankYou}
+            </p>
+            {!isReadOnly && (
+              <div className="flex justify-center gap-4 mt-4">
+                <Button
+                  variant="default"
+                  onClick={() => router.push('/dashboard?tab=forms')}
+                  className="rounded-none"
+                  style={{
+                    backgroundColor: style.primaryColor,
+                    color: '#ffffff',
+                  }}
+                >
+                  {dict.formPreview.buttons.close}
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2 w-full text-center">
+              <h2 
+                className="text-2xl font-bold" 
+                style={{ 
+                  color: style.textColor,
+                  fontFamily: style.fontFamily 
+                }}
+              >
+                {form.title}
+              </h2>
+              {form.description && (
+                <p 
+                  className="text-sm opacity-80" 
+                  style={{ 
+                    color: style.textColor,
+                    fontFamily: style.fontFamily 
+                  }}
+                >
+                  {form.description}
+                </p>
+              )}
+            </div>
+            <div className={`
+              w-full
+              ${getSpacingClass()} 
+              p-4
+              ${getBorderRadiusClass()} 
+              ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
+              text-sm
+            `}>
+              <div className="grid grid-cols-12 grid-auto-rows-min">
+                {((): React.ReactNode => {
+                  const sections: Array<{
+                    fields: typeof fieldsToRender;
+                    separator?: typeof fieldsToRender[0];
+                  }> = [];
+                  let currentSection: typeof fieldsToRender = [];
+                  fieldsToRender.forEach((field) => {
+                    if (field.type === 'SEPARATOR') {
+                      if (currentSection.length > 0) {
+                        sections.push({ fields: currentSection, separator: field });
+                        currentSection = [];
+                      }
+                    } else {
+                      currentSection.push(field);
+                    }
+                  });
+                  if (currentSection.length > 0) {
+                    sections.push({ fields: currentSection });
+                  }
+                  return sections.map((section, sectionIndex) => (
+                    <div 
+                      key={sectionIndex}
+                      className="col-span-12 form-section"
+                    >
+                      <div className="grid grid-cols-12 grid-auto-rows-min">
+                        {section.fields.map((field) => {
+                          const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
+                          const fieldClass =
+                            field.type !== 'RICH_TEXT'
+                              ? 'p-0'
+                              : 'border-0 form-field-rich-text-print';
+                          return (
+                            <div 
+                              key={field.id} 
+                              className={`form-field transition-colors ${fieldClass} ${gridPos.y > 0 ? 'mt-2' : ''}`}
+                              style={{
+                                gridColumnStart: gridPos.x + 1,
+                                gridColumnEnd: `span ${gridPos.width}`,
+                                gridRow: gridPos.y + 1,
+                                color: style.textColor,
+                              }}
+                            >
+                              {renderField(field)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {section.separator && (
+                        <div className="w-full">
+                          {renderField(section.separator)}
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </>
+        )}
+      </form>
+    </div>
+  );
+
+  // Only the formPreview (not the outer min-h-screen container) is rendered inside PDFExport.
+  // This prevents the bottom white screen in the exported PDF.
+
+  return (
+    <div id="form-to-print" className="w-full flex justify-center">
+      <div className="w-[800px] sm:w-full md:w-[800px] lg:w-[800px] xl:w-[800px] 2xl:w-[800px] max-w-full flex flex-col min-h-screen">
         {/* Print-only header - will appear on every page */}
         {form.header && (
           <div className="print-header">
@@ -1262,7 +1358,6 @@ export function FormPreview({
             )}
           </div>
         )}
-        
         {/* Print-only footer - will appear on every page */}
         {form.footer && (
           <div className="print-footer">
@@ -1279,7 +1374,6 @@ export function FormPreview({
             )}
           </div>
         )}
-
         {/* File ID and date for print - will appear on every page */}
         <div className="print-file-info" style={{ display: 'none' }}>
           <div>
@@ -1289,7 +1383,6 @@ export function FormPreview({
             )}
           </div>
         </div>
-
         {/* Alternative fixed headers/footers for better browser support */}
         <div className="print-header-fixed" style={{ display: 'none' }}>
           {form.header && (
@@ -1315,7 +1408,6 @@ export function FormPreview({
             </div>
           )}
         </div>
-
         <div className="print-footer-fixed" style={{ display: 'none'}}>
           {form.footer && (
             <div className="flex items-center w-full px-6">
@@ -1340,11 +1432,10 @@ export function FormPreview({
             </div>
           )}
         </div>
-
         {isReadOnly && (
           <div className="flex justify-end mb-2 print-button">
             <Button
-              onClick={handlePrint}
+              onClick={handleExportPDF}
               disabled={isPrinting}
               variant="ghost"
               size="sm"
@@ -1355,7 +1446,6 @@ export function FormPreview({
             </Button>
           </div>
         )}
-
         <div 
           className="border border-border rounded-lg flex flex-col flex-grow"
           style={{ backgroundColor: style.backgroundColor }}
@@ -1383,156 +1473,7 @@ export function FormPreview({
               )}
             </div>
           )}
-
-          <div className="flex-grow">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!isReadOnly && !isSubmitted) {
-                  handleSubmit();
-                }
-              }}
-              className={`
-                form-content form-content-print
-                w-full flex flex-col items-center
-                ${getSpacingClass()} 
-                p-4
-                ${getBorderRadiusClass()} 
-                ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
-                text-sm
-              `}
-              style={{
-                color: style.textColor || '#000000',
-                fontFamily: style.fontFamily || 'Inter',
-                backgroundColor: style.backgroundColor || '#ffffff',
-              }}
-            >
-              {isSubmitted ? (
-                <div className="text-center space-y-4" style={{ color: style.textColor }}>
-                  <div className="text-xl font-semibold" style={{ color: style.textColor }}>
-                    {dict.formPreview.submission.success}
-                  </div>
-                  <p className="text-sm opacity-80" style={{ color: style.textColor }}>
-                    {dict.formPreview.submission.thankYou}
-                  </p>
-                  {!isReadOnly && (
-                    <div className="flex justify-center gap-4 mt-4">
-                      <Button
-                        variant="default"
-                        onClick={() => router.push('/dashboard?tab=forms')}
-                        className="rounded-none"
-                        style={{
-                          backgroundColor: style.primaryColor,
-                          color: '#ffffff',
-                        }}
-                      >
-                        {dict.formPreview.buttons.close}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-2 w-full text-center">
-                    <h2 
-                      className="text-2xl font-bold" 
-                      style={{ 
-                        color: style.textColor,
-                        fontFamily: style.fontFamily 
-                      }}
-                    >
-                      {form.title}
-                    </h2>
-                    {form.description && (
-                      <p 
-                        className="text-sm opacity-80" 
-                        style={{ 
-                          color: style.textColor,
-                          fontFamily: style.fontFamily 
-                        }}
-                      >
-                        {form.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className={`
-                    w-full
-                    ${getSpacingClass()} 
-                    p-4
-                    ${getBorderRadiusClass()} 
-                    ${(isReadOnly || isSubmitted) ? 'mt-8' : ''}
-                    text-sm
-                  `}>
-                    <div className="grid grid-cols-12 grid-auto-rows-min">
-                      {((): React.ReactNode => {
-                        const sections: Array<{
-                          fields: typeof fieldsToRender;
-                          separator?: typeof fieldsToRender[0];
-                        }> = [];
-                        let currentSection: typeof fieldsToRender = [];
-
-                        fieldsToRender.forEach((field) => {
-                          if (field.type === 'SEPARATOR') {
-                            if (currentSection.length > 0) {
-                              sections.push({ fields: currentSection, separator: field });
-                              currentSection = [];
-                            }
-                          } else {
-                            currentSection.push(field);
-                          }
-                        });
-
-                        if (currentSection.length > 0) {
-                          sections.push({ fields: currentSection });
-                        }
-
-                        return sections.map((section, sectionIndex) => (
-                          <div 
-                            key={sectionIndex}
-                            className="col-span-12 form-section"
-                          >
-                            <div className="grid grid-cols-12 grid-auto-rows-min">
-                              {section.fields.map((field) => {
-                                const gridPos = field.gridPosition || { x: 0, y: 0, width: 12, height: 1 };
-                                
-                                // Add print margin class for RICH_TEXT fields
-                                const fieldClass =
-                                  field.type !== 'RICH_TEXT'
-                                    ? 'p-0'
-                                    : 'border-0 form-field-rich-text-print';
-
-                                return (
-                                  <div 
-                                    key={field.id} 
-                                    className={`form-field transition-colors ${fieldClass} ${gridPos.y > 0 ? 'mt-2' : ''}`}
-                                    style={{
-                                      gridColumnStart: gridPos.x + 1,
-                                      gridColumnEnd: `span ${gridPos.width}`,
-                                      gridRow: gridPos.y + 1,
-                                      color: style.textColor,
-                                    }}
-                                  >
-                                    {renderField(field)}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            {section.separator && (
-                              <div className="w-full">
-                                {renderField(section.separator)}
-                              </div>
-                            )}
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  </div>
-                </>
-              )}
-            </form>
-          </div>
-
+          {formPreview}
           {/* Original footer - hidden in print */}
           {form.footer && (
             <>
@@ -1567,6 +1508,34 @@ export function FormPreview({
               </div>
             </>
           )}
+        </div>
+
+        {/* Hide PDFExport from UI but keep it in DOM for PDF generation */}
+        <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '1px', height: '1px', overflow: 'hidden' }}>
+          <PDFExport
+            fileName={`${form.title} - ${form.id}`}
+            pageTemplate={pageTemplate}
+            paperSize="A4"
+            landscape={false}
+            ref={(pdfExport) => { pdfExportComponent.current = pdfExport; }}
+          >
+            <div
+              className="pdf-content"
+              style={{
+                backgroundColor: style.backgroundColor,
+                minHeight: '105vh',
+                width: '100%',
+                margin: 0,
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                paddingTop: 0,
+                paddingBottom: 40,
+              }}
+            >
+              {formPreview}
+            </div>
+          </PDFExport>
         </div>
       </div>
     </div>
