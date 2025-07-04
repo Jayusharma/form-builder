@@ -1128,7 +1128,10 @@ export function FormPreview({
         {form.header?.logo && (
           <img src={form.header.logo} alt="Header Logo" style={{ height: 32, marginRight: 12 }} />
         )}
-        <div dangerouslySetInnerHTML={{ __html: form.header?.text || "" }} />
+        <div
+          dangerouslySetInnerHTML={{ __html: form.header?.text || "" }}
+          style={{ textAlign: style.alignment, width: "100%" }}
+        />
       </div>
 
       {/* Footer */}
@@ -1180,9 +1183,11 @@ export function FormPreview({
           {form.footer?.logo && (
             <img src={form.footer.logo} alt="Footer Logo" style={{ height: 32, marginRight: 12 }} />
           )}
-          <span dangerouslySetInnerHTML={{ __html: form.footer?.text || "" }} />
+          <span
+            dangerouslySetInnerHTML={{ __html: form.footer?.text || "" }}
+            style={{ textAlign: style.alignment, width: "100%" }}
+          />
         </div>
-        
       </div>
     </div>
   );
@@ -1526,11 +1531,12 @@ export function FormPreview({
                 minHeight: '105vh',
                 width: '100%',
                 margin: 0,
+                padding: 0,
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
                 paddingTop: 0,
-                paddingBottom: 40,
+                paddingBottom: 30,
               }}
             >
               {formPreview}
